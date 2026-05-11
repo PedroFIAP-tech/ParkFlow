@@ -1,0 +1,15 @@
+package br.com.parkflow.enums;
+
+public enum TimelineEventType {
+    OCORRENCIA_CRIADA,
+    STATUS_ALTERADO,
+    PRIORIDADE_ALTERADA,
+    FOTO_ADICIONADA,
+    DOCUMENTO_ADICIONADO,
+    IA_ANALISOU,
+    VISTORIA_INICIADA,
+    VISTORIA_FINALIZADA,
+    COMENTARIO,
+    ENCAMINHAMENTO
+}
+
