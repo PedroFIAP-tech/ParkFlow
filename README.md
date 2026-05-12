@@ -6,47 +6,30 @@ Central operacional inteligente para gestao de ocorrencias e sinistros veiculare
 
 - Frontend: Next.js + TypeScript + Tailwind, deploy na Vercel
 - Backend: Java Spring Boot, deploy na Render
-- Banco: Neon PostgreSQL
-- IA: OpenAI Responses API
-- Storage: Cloudinary
+- Banco: PostgreSQL em Docker
+- IA: workflows n8n chamando OpenAI por HTTP Request
+- Storage: ainda nao implementado em producao
 
 ## Estrutura
 
 ```txt
 ParkFlow/
-  backend/   API Spring Boot + JWT + Flyway + Neon + OpenAI + Cloudinary
+  backend/   API Spring Boot + JWT + Flyway + PostgreSQL
   frontend/  Webapp/PWA Next.js operacional
 ```
 
 ## O que criar/configurar
 
-### IA
+### IA via n8n
 
-No backend, a IA fica em `backend/src/main/java/br/com/parkflow/integration/ai`.
-
-Ela e responsavel por:
-
-- receber contexto estruturado da ocorrencia;
-- enviar fotos do Cloudinary como `input_image`;
-- pedir uma resposta JSON estruturada para a OpenAI;
-- salvar o resultado em `ai_analyses`;
-- marcar confianca, modelo, provider e resposta bruta.
-
-Nao coloque a chave da OpenAI no frontend e nao salve segredo no Git. Configure somente no backend:
+A chave da OpenAI fica somente no n8n. O frontend chama apenas os webhooks publicos:
 
 ```txt
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-5-mini
+NEXT_PUBLIC_N8N_ANALYZE_WEBHOOK_URL=https://pedrosilvapriv.app.n8n.cloud/webhook/parkflow-analyze
+NEXT_PUBLIC_N8N_OCR_WEBHOOK_URL=https://pedrosilvapriv.app.n8n.cloud/webhook/parkflow-ocr
 ```
 
-Endpoints principais:
-
-```txt
-POST /api/ai/occurrences/{id}/analyze
-GET  /api/ai/occurrences/{id}/analyses
-```
-
-Enquanto `OPENAI_API_KEY` estiver vazia, o backend retorna uma analise local de preview. Isso permite demonstrar o fluxo sem consumir creditos nem quebrar a tela.
+Os workflows atuais recebem `multipart/form-data` com o arquivo real no campo `image`. Ainda nao existe pipeline real de storage/Cloudinary no produto.
 
 ### Frontend
 
@@ -54,6 +37,8 @@ O frontend consome a API do Spring Boot:
 
 ```txt
 NEXT_PUBLIC_API_URL=https://sua-api.onrender.com/api
+NEXT_PUBLIC_N8N_ANALYZE_WEBHOOK_URL=https://...
+NEXT_PUBLIC_N8N_OCR_WEBHOOK_URL=https://...
 ```
 
 ### Backend
@@ -61,26 +46,38 @@ NEXT_PUBLIC_API_URL=https://sua-api.onrender.com/api
 O backend precisa de:
 
 ```txt
-SPRING_DATASOURCE_URL=jdbc:postgresql://...
-SPRING_DATASOURCE_USERNAME=...
-SPRING_DATASOURCE_PASSWORD=...
-JWT_SECRET=troque-por-um-segredo-grande
-APP_CORS_ALLOWED_ORIGINS=https://seu-front.vercel.app,http://localhost:3000
-CLOUDINARY_CLOUD_NAME=...
-CLOUDINARY_API_KEY=...
-CLOUDINARY_API_SECRET=...
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-5-mini
+DATABASE_URL=jdbc:postgresql://...
+DATABASE_USERNAME=...
+DATABASE_PASSWORD=...
+JWT_SECRET=parkflow_2026_ultra_secure_jwt_secret
+CORS_ALLOWED_ORIGINS=https://seu-front.vercel.app
 ```
 
 ### Banco
 
 As tabelas sao criadas por Flyway em `backend/src/main/resources/db/migration`.
 
-No Neon, use a URL JDBC no Render:
+Para desenvolvimento local, suba o PostgreSQL com Docker:
+
+```bash
+docker compose up -d parkflow_db
+```
+
+Credenciais locais:
 
 ```txt
-SPRING_DATASOURCE_URL=jdbc:postgresql://host/db?sslmode=require
+Database: parkflow
+User: parkflow
+Password: parkflow
+Port: 5433 no host, 5432 dentro do container
+```
+
+Variaveis do backend:
+
+```txt
+DATABASE_URL=jdbc:postgresql://localhost:5433/parkflow
+DATABASE_USERNAME=parkflow
+DATABASE_PASSWORD=parkflow
 ```
 
 ### Primeiro login local
@@ -104,6 +101,7 @@ APP_SEED_ADMIN_PASSWORD=...
 Backend:
 
 ```bash
+docker compose up -d parkflow_db
 cd backend
 mvn spring-boot:run
 ```
@@ -123,18 +121,14 @@ Render:
 - criar Web Service via `render.yaml`;
 - apontar para `backend/Dockerfile`;
 - configurar variaveis do backend.
+- se o backend estiver publicado na Render, o banco PostgreSQL em Docker tambem precisa estar acessivel em uma maquina/servidor publico. Um container rodando localmente no seu PC nao sera acessivel pela Render.
 
 Vercel:
 
 - importar a pasta `frontend`;
 - configurar `NEXT_PUBLIC_API_URL` com a URL do Render, incluindo `/api`.
 
-Cloudinary:
+IA:
 
-- criar credenciais;
-- configurar `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
-
-OpenAI:
-
-- configurar `OPENAI_API_KEY` no Render;
-- manter chamadas somente no backend.
+- configurar os dois webhooks n8n na Vercel;
+- manter a OpenAI API Key somente dentro do n8n.

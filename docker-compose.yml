@@ -1,0 +1,21 @@
+services:
+  parkflow_db:
+    image: postgres:15
+    container_name: parkflow_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: parkflow
+      POSTGRES_USER: parkflow
+      POSTGRES_PASSWORD: parkflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - parkflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U parkflow -d parkflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  parkflow_postgres_data:

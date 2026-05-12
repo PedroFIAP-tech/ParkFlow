@@ -27,6 +27,9 @@ export type AIAnalysis = {
   model: string;
   confidenceScore: number;
   severitySuggestion: Priority;
+  damageDetected?: string;
+  damageType?: string;
+  affectedParts?: string[];
   detectedPlate: string;
   plateDivergence: boolean;
   summary: string;
@@ -64,4 +67,3 @@ export type OccurrenceDetail = OccurrenceSummary & {
   aiAnalyses: AIAnalysis[];
   reportedAt: string;
 };
-

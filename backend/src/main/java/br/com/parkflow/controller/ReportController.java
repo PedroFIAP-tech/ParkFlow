@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/reports")
+@RequestMapping("/api/reports")
 public class ReportController {
 
     private final ReportService reportService;
@@ -21,4 +21,3 @@ public class ReportController {
         return reportService.operationalOverview();
     }
 }
-

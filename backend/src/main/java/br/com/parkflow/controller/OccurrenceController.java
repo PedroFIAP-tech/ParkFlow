@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/occurrences")
+@RequestMapping("/api/occurrences")
 public class OccurrenceController {
 
     private final OccurrenceService occurrenceService;
@@ -78,4 +78,3 @@ public class OccurrenceController {
         return occurrenceService.addDocument(id, file, documentType);
     }
 }
-

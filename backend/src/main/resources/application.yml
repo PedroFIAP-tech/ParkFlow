@@ -1,15 +1,13 @@
 server:
   port: ${PORT:${SERVER_PORT:8080}}
-  servlet:
-    context-path: /api
 
 spring:
   application:
     name: parkflow-api
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/parkflow}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    url: ${DATABASE_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/parkflow}}
+    username: ${DATABASE_USERNAME:${SPRING_DATASOURCE_USERNAME:parkflow}}
+    password: ${DATABASE_PASSWORD:${SPRING_DATASOURCE_PASSWORD:parkflow}}
   flyway:
     enabled: true
   jpa:
@@ -29,16 +27,13 @@ management:
 
 app:
   cors:
-    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}}
   jwt:
-    secret: ${JWT_SECRET:dev-secret-change-this-value-with-at-least-32-chars}
+    secret: ${JWT_SECRET:parkflow_2026_ultra_secure_jwt_secret}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:720}
   seed:
     admin-email: ${APP_SEED_ADMIN_EMAIL:admin@parkflow.com}
     admin-password: ${APP_SEED_ADMIN_PASSWORD:ParkFlow@2026}
-  openai:
-    api-key: ${OPENAI_API_KEY:}
-    model: ${OPENAI_MODEL:gpt-5-mini}
   cloudinary:
     cloud-name: ${CLOUDINARY_CLOUD_NAME:}
     api-key: ${CLOUDINARY_API_KEY:}

@@ -1,6 +1,6 @@
 import type { OccurrenceDetail, OccurrenceSummary } from "@/types/parkflow";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 const TOKEN_KEY = "parkflow_token";
 
 type LoginResponse = {
@@ -29,6 +29,10 @@ export function clearToken() {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!API_URL) {
+    throw new Error("NEXT_PUBLIC_API_URL nao configurada.");
+  }
+
   const token = getToken();
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
@@ -69,4 +73,3 @@ export async function analyzeOccurrence(id: string) {
     method: "POST"
   });
 }
-

@@ -1,4 +1,7 @@
+"use client";
+
 import type { LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 
 export function MetricCard({
   label,
@@ -12,7 +15,7 @@ export function MetricCard({
   icon: LucideIcon;
 }) {
   return (
-    <div className="glass-panel rounded-lg p-4">
+    <motion.div whileHover={{ y: -2 }} className="glass-panel rounded-xl p-4 transition hover:border-electric/35">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{label}</p>
@@ -22,7 +25,6 @@ export function MetricCard({
           <Icon className="h-5 w-5" />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
-

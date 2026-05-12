@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/ai")
+@RequestMapping("/api/ai")
 public class AIController {
 
     private final AIAnalysisService aiAnalysisService;
@@ -31,4 +31,3 @@ public class AIController {
         return aiAnalysisService.listByOccurrence(id);
     }
 }
-
