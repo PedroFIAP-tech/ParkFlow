@@ -21,7 +21,7 @@ export default function ReportsPage() {
         <MetricCard label="SLA medio" value="2h14" icon={Clock} tone="border-electric/30 bg-electric/10 text-electric" />
         <MetricCard label="Criticas" value="8" icon={ShieldAlert} tone="border-danger/30 bg-danger/10 text-danger" />
         <MetricCard label="Pendentes" value="21" icon={FileWarning} tone="border-warning/30 bg-warning/10 text-warning" />
-        <MetricCard label="Finalizadas" value="132" icon={BarChart3} tone="border-success/30 bg-success/10 text-success" />
+        <MetricCard label="Resolvidas" value="132" icon={BarChart3} tone="border-success/30 bg-success/10 text-success" />
       </section>
 
       <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
@@ -47,14 +47,14 @@ export default function ReportsPage() {
               <div className="flex items-center justify-between rounded-xl border border-success/25 bg-success/10 p-4">
                 <div className="flex items-center gap-3">
                   <TrendingDown className="h-5 w-5 text-success" />
-                  <span className="text-sm font-semibold text-white">Tempo parado</span>
+                  <span className="text-sm font-semibold text-white">Tempo em aberto</span>
                 </div>
                 <span className="text-sm text-success">-18%</span>
               </div>
               <div className="flex items-center justify-between rounded-xl border border-warning/25 bg-warning/10 p-4">
                 <div className="flex items-center gap-3">
                   <TrendingUp className="h-5 w-5 text-warning" />
-                  <span className="text-sm font-semibold text-white">Fila critica</span>
+                  <span className="text-sm font-semibold text-white">Alertas criticos</span>
                 </div>
                 <span className="text-sm text-warning">+4 casos</span>
               </div>
@@ -64,7 +64,7 @@ export default function ReportsPage() {
           <PremiumCard className="p-5">
             <SectionTitle eyebrow="Leitura executiva" title="Resumo IA" />
             <p className="mt-5 rounded-xl border border-brand/20 bg-brand/10 p-4 text-sm leading-6 text-blue-100">
-              O volume critico esta concentrado em ocorrencias aguardando documento e vistoria. Priorize triagem com fotos e reduza espera antes do encaminhamento.
+              O volume critico esta concentrado em placas reincidentes e acessos fora do padrao. Priorize consulta historica, evidencia visual e decisao do supervisor.
             </p>
           </PremiumCard>
         </aside>
@@ -72,4 +72,3 @@ export default function ReportsPage() {
     </AppShell>
   );
 }
-

@@ -23,10 +23,10 @@ type PriorityFilter = Priority | "TODAS";
 const statusOptions: Array<{ label: string; value: StatusFilter }> = [
   { label: "Todos", value: "TODOS" },
   { label: "Aberta", value: "ABERTA" },
-  { label: "Aguardando Vistoria", value: "AGUARDANDO_VISTORIA" },
   { label: "Em Analise", value: "EM_ANALISE" },
-  { label: "Aguardando Pecas", value: "AGUARDANDO_PECA" },
-  { label: "Finalizada", value: "FINALIZADA" }
+  { label: "Alerta Gerado", value: "ALERTA_GERADO" },
+  { label: "Monitoramento", value: "MONITORAMENTO" },
+  { label: "Resolvida", value: "RESOLVIDA" }
 ];
 
 const priorityOptions: Array<{ label: string; value: PriorityFilter }> = [
@@ -64,7 +64,7 @@ export default function OccurrencesPage() {
     const next = [created, ...occurrences];
     setOccurrences(next);
     saveOccurrences(next);
-    showToast({ type: "success", message: "Ocorrencia criada e listada com sucesso." });
+    showToast({ type: created.alerts.length ? "error" : "success", message: created.alerts[0]?.message ?? "Ocorrencia criada e listada com sucesso." });
   }
 
   return (
@@ -83,6 +83,7 @@ export default function OccurrencesPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onCreate={handleCreate}
+        occurrences={occurrences}
         onError={(message) => showToast({ type: "error", message })}
       />
 
@@ -93,7 +94,7 @@ export default function OccurrencesPage() {
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Placa, ID, tipo, chassi ou local"
+            placeholder="Placa, ID, tipo, unidade ou local"
             className="h-full w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
           />
           {search ? (

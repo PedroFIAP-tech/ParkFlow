@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "ai_analyses")
+@Table(name = "ai_analysis")
 public class AIAnalysisEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -44,6 +44,15 @@ public class AIAnalysisEntity extends BaseEntity {
 
     @Column(length = 12)
     private String detectedPlate;
+
+    @Column(length = 120)
+    private String vehicleType;
+
+    @Column(columnDefinition = "text")
+    private String evidence;
+
+    @Column(columnDefinition = "text")
+    private String operationalRisk;
 
     private Boolean plateDivergence;
 
@@ -137,6 +146,30 @@ public class AIAnalysisEntity extends BaseEntity {
         this.plateDivergence = plateDivergence;
     }
 
+    public String getVehicleType() {
+        return vehicleType;
+    }
+
+    public void setVehicleType(String vehicleType) {
+        this.vehicleType = vehicleType;
+    }
+
+    public String getEvidence() {
+        return evidence;
+    }
+
+    public void setEvidence(String evidence) {
+        this.evidence = evidence;
+    }
+
+    public String getOperationalRisk() {
+        return operationalRisk;
+    }
+
+    public void setOperationalRisk(String operationalRisk) {
+        this.operationalRisk = operationalRisk;
+    }
+
     public String getSummary() {
         return summary;
     }
@@ -185,4 +218,3 @@ public class AIAnalysisEntity extends BaseEntity {
         this.reviewedAt = reviewedAt;
     }
 }
-

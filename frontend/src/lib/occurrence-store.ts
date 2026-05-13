@@ -1,8 +1,9 @@
 import { mockDetail } from "@/lib/mock-data";
 import type { ParkFlowAIResult } from "@/lib/ai-analysis";
-import type { AIAnalysis, OccurrenceDetail, OccurrenceStatus, Priority, TimelineEvent } from "@/types/parkflow";
+import type { AIAnalysis, OccurrenceDetail, OccurrenceStatus, PlateAlert, Priority, TimelineEvent } from "@/types/parkflow";
 
-const STORAGE_KEY = "parkflow_occurrences_v2";
+const STORAGE_KEY = "parkflow_security_occurrences_v3";
+const PLATE_ALERT_MESSAGE = "Atenção: veículo com histórico de suspeita registrado anteriormente.";
 
 const seedIds = ["demo-1", "demo-2", "demo-3", "demo-4"];
 
@@ -13,6 +14,7 @@ export type NewOccurrenceInput = {
   priority: Priority;
   description: string;
   photoUrl?: string;
+  photoUrls?: string[];
   aiResult?: ParkFlowAIResult | null;
 };
 
@@ -23,10 +25,32 @@ export type InspectionInput = {
 };
 
 export function statusLabel(status: OccurrenceStatus) {
-  return status
-    .replaceAll("_", " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+  const labels: Record<OccurrenceStatus, string> = {
+    ABERTA: "Aberta",
+    EM_ANALISE: "Em analise",
+    ALERTA_GERADO: "Alerta gerado",
+    MONITORAMENTO: "Monitoramento",
+    RESOLVIDA: "Resolvida",
+    CANCELADA: "Cancelada"
+  };
+  return labels[status];
+}
+
+export function typeLabel(type: string) {
+  const labels: Record<string, string> = {
+    PLACA_SUSPEITA: "Placa suspeita",
+    ACESSO_NAO_AUTORIZADO: "Acesso nao autorizado",
+    CONDUTA_SUSPEITA: "Conduta suspeita",
+    INVASAO: "Invasao",
+    COLISAO: "Colisao",
+    VANDALISMO: "Vandalismo",
+    DESACORDO_OPERACIONAL: "Desacordo operacional",
+    EVASAO: "Evasao",
+    FURTO_ROUBO: "Furto/roubo",
+    DANO_PATRIMONIAL: "Dano patrimonial",
+    OUTROS: "Outros"
+  };
+  return labels[type] ?? type.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 export function priorityRank(priority: Priority) {
@@ -37,44 +61,48 @@ export function initialOccurrences(): OccurrenceDetail[] {
   const now = Date.now();
   const base = seedIds.map((id) => mockDetail(id));
 
-  const finalized: OccurrenceDetail = {
+  const resolvedHistory: OccurrenceDetail = {
     ...mockDetail("demo-4"),
     id: "demo-5",
     occurrenceCode: "PF-2026-000144",
     vehicle: {
       id: "veh-5",
-      plate: "FNL8D22",
-      brand: "Honda",
-      model: "Civic",
-      color: "Cinza"
+      plate: "BRP4K21",
+      brand: "Volkswagen",
+      model: "Nivus Highline",
+      color: "Azul"
     },
-    type: "AVARIA",
-    status: "FINALIZADA",
-    priority: "BAIXA",
-    location: "Patio Oeste",
+    type: "EVASAO",
+    status: "RESOLVIDA",
+    priority: "ALTA",
+    location: "Unidade Pinheiros",
     stoppedMinutes: 0,
     updatedAt: new Date(now - 1000 * 60 * 38).toISOString(),
-    reportedAt: new Date(now - 1000 * 60 * 260).toISOString(),
+    reportedAt: new Date(now - 1000 * 60 * 60 * 28).toISOString(),
+    alerts: [],
     timeline: [
-      event("tl-final-1", "STATUS_ALTERADO", "Ocorrencia finalizada", "Vistoria concluida e veiculo liberado.", "Operacao ParkFlow", 38),
-      event("tl-final-2", "VISTORIA_FINALIZADA", "Vistoria finalizada", "Checklist tecnico anexado ao registro.", "Marina Costa", 55),
-      event("tl-final-3", "OCORRENCIA_CRIADA", "Ocorrencia aberta", "Registro criado pela central operacional.", "Rafael Lima", 260)
+      event("tl-final-1", "STATUS_ALTERADO", "Ocorrencia resolvida", "Supervisor registrou abordagem e encerrou o monitoramento.", "Operacao ParkFlow", 38),
+      event("tl-final-2", "EVIDENCIA_ADICIONADA", "Evidencia anexada", "Imagem da cancela vinculada ao historico da placa.", "Marina Costa", 55),
+      event("tl-final-3", "OCORRENCIA_CRIADA", "Ocorrencia de seguranca aberta", "Registro criado pela central operacional.", "Rafael Lima", 60 * 28)
     ],
     latestAIAnalysis: {
       id: "ai-final-1",
       provider: "OPENAI",
       model: "gpt-5-mini",
       confidenceScore: 77,
-      severitySuggestion: "BAIXA",
-      detectedPlate: "FNL8D22",
+      severitySuggestion: "ALTA",
+      detectedPlate: "BRP4K21",
       plateDivergence: false,
-      summary: "Avaria superficial, sem indicio de dano estrutural. Caso elegivel para encerramento rapido.",
-      nextStep: "Registrar liberacao e arquivar fotos finais.",
+      vehicleType: "SUV azul",
+      evidence: "Imagem de saida sem validacao",
+      operationalRisk: "Historico de evasao em unidade diferente",
+      summary: "Placa registrada em evento de evasao anterior. Manter atencao em novas entradas da mesma placa.",
+      nextStep: "Validar operador responsavel, preservar evidencias e manter historico por placa.",
       createdAt: new Date(now - 1000 * 60 * 50).toISOString()
     }
   };
 
-  return [...base, finalized].sort((a, b) => priorityRank(a.priority) - priorityRank(b.priority));
+  return [...base, resolvedHistory].sort((a, b) => priorityRank(a.priority) - priorityRank(b.priority));
 }
 
 export function loadOccurrences(): OccurrenceDetail[] {
@@ -109,20 +137,23 @@ export function createOccurrence(input: NewOccurrenceInput, current: OccurrenceD
   const now = new Date();
   const sequence = String(149 + current.length).padStart(6, "0");
   const id = `demo-${crypto.randomUUID()}`;
-  const ai = input.aiResult ? buildAIFromResult(input.plate, input.aiResult) : null;
+  const plate = normalizePlate(input.plate);
+  const history = getPlateHistory(current, plate);
+  const alert = history[0] ? buildPlateAlert(plate, history[0]) : null;
+  const ai = input.aiResult ? buildAIFromResult(plate, input.aiResult) : null;
 
   return {
     id,
     occurrenceCode: `PF-2026-${sequence}`,
     vehicle: {
       id: `veh-${crypto.randomUUID()}`,
-      plate: normalizePlate(input.plate),
+      plate,
       brand: "Nao informado",
-      model: "Veiculo em triagem",
+      model: "Veículo monitorado",
       color: "Nao informado"
     },
     type: input.type,
-    status: "ABERTA",
+    status: alert ? "ALERTA_GERADO" : "ABERTA",
     priority: input.priority,
     location: input.location,
     description: input.description,
@@ -130,19 +161,35 @@ export function createOccurrence(input: NewOccurrenceInput, current: OccurrenceD
     updatedAt: now.toISOString(),
     reportedAt: now.toISOString(),
     latestAIAnalysis: ai,
+    latestAlert: alert,
     aiAnalyses: ai ? [ai] : [],
-    photos: input.photoUrl
-      ? [{ id: `photo-${crypto.randomUUID()}`, url: input.photoUrl, originalFilename: "foto-vistoria.jpg" }]
-      : [],
+    alerts: alert ? [alert] : [],
+    photos: (input.photoUrls?.length ? input.photoUrls : input.photoUrl ? [input.photoUrl] : []).map((url, index) => ({
+      id: `photo-${crypto.randomUUID()}`,
+      url,
+      originalFilename: `evidencia-seguranca-${index + 1}.jpg`
+    })),
     documents: [],
     timeline: [
-      event(`tl-${crypto.randomUUID()}`, "OCORRENCIA_CRIADA", "Ocorrencia aberta", "Registro criado pela central operacional.", "Voce", 0),
-      ...(input.photoUrl
+      ...(alert
         ? [
-            event(`tl-${crypto.randomUUID()}`, "FOTO_ADICIONADA", "Foto adicionada", "Evidencia visual anexada ao caso.", "Voce", 0)
+            event(
+              `tl-${crypto.randomUUID()}`,
+              "ALERTA_GERADO",
+              "Alerta automatico de reincidencia",
+              `${PLATE_ALERT_MESSAGE} Unidade anterior: ${alert.previousUnit}. Tipo: ${typeLabel(alert.previousType)}. Risco: ${alert.riskLevel}.`,
+              "ParkFlow Security AI",
+              0
+            )
           ]
         : []),
-      ...(ai ? [event(`tl-${crypto.randomUUID()}`, "IA_ANALISOU", "Analise inteligente concluida", ai.summary, "ParkFlow AI", 0)] : [])
+      event(`tl-${crypto.randomUUID()}`, "OCORRENCIA_CRIADA", "Ocorrencia de seguranca aberta", "Registro criado na central operacional.", "Voce", 0),
+      ...(input.photoUrl
+        ? [
+            event(`tl-${crypto.randomUUID()}`, "EVIDENCIA_ADICIONADA", "Evidencia visual adicionada", "Imagem anexada ao caso.", "Voce", 0)
+          ]
+        : []),
+      ...(ai ? [event(`tl-${crypto.randomUUID()}`, "IA_ANALISOU", "Analise de evidencia concluida", ai.summary, "ParkFlow Security AI", 0)] : [])
     ]
   };
 }
@@ -158,15 +205,15 @@ export function applyInspection(occurrences: OccurrenceDetail[], input: Inspecti
       status: "EM_ANALISE",
       updatedAt: new Date().toISOString(),
       timeline: [
-        event(`tl-${crypto.randomUUID()}`, "VISTORIA_INICIADA", "Vistoria iniciada", input.observation || "Vistoria aberta pelo operador.", "Voce", 0),
+        event(`tl-${crypto.randomUUID()}`, "EVIDENCIA_ADICIONADA", "Evidencia operacional registrada", input.observation || "Nova evidencia registrada pelo operador.", "Voce", 0),
         ...occurrence.timeline
       ]
     };
 
     if (input.photoUrl) {
-      updated.photos = [{ id: `photo-${crypto.randomUUID()}`, url: input.photoUrl, originalFilename: "foto-vistoria.jpg" }, ...updated.photos];
+      updated.photos = [{ id: `photo-${crypto.randomUUID()}`, url: input.photoUrl, originalFilename: "evidencia-seguranca.jpg" }, ...updated.photos];
       updated.timeline = [
-        event(`tl-${crypto.randomUUID()}`, "FOTO_ADICIONADA", "Foto de vistoria adicionada", "Imagem anexada durante a vistoria.", "Voce", 0),
+        event(`tl-${crypto.randomUUID()}`, "EVIDENCIA_ADICIONADA", "Imagem de evidencia adicionada", "Imagem anexada durante a analise operacional.", "Voce", 0),
         ...updated.timeline
       ];
     }
@@ -184,13 +231,14 @@ export function addPhotoAndAI(occurrences: OccurrenceDetail[], occurrenceId: str
     const ai = buildAI(occurrence.vehicle.plate, occurrence.priority);
     return {
       ...occurrence,
+      status: occurrence.status === "ABERTA" ? "EM_ANALISE" : occurrence.status,
       updatedAt: new Date().toISOString(),
-      photos: [{ id: `photo-${crypto.randomUUID()}`, url: photoUrl, originalFilename: "foto-upload.jpg" }, ...occurrence.photos],
+      photos: [{ id: `photo-${crypto.randomUUID()}`, url: photoUrl, originalFilename: "evidencia-upload.jpg" }, ...occurrence.photos],
       aiAnalyses: [ai, ...occurrence.aiAnalyses],
       latestAIAnalysis: ai,
       timeline: [
-        event(`tl-${crypto.randomUUID()}`, "IA_ANALISOU", "Analise inteligente concluida", ai.summary, "ParkFlow AI", 0),
-        event(`tl-${crypto.randomUUID()}`, "FOTO_ADICIONADA", "Foto adicionada", "Nova evidencia visual anexada.", "Voce", 0),
+        event(`tl-${crypto.randomUUID()}`, "IA_ANALISOU", "Analise de evidencia concluida", ai.summary, "ParkFlow Security AI", 0),
+        event(`tl-${crypto.randomUUID()}`, "EVIDENCIA_ADICIONADA", "Evidencia adicionada", "Nova imagem vinculada a placa.", "Voce", 0),
         ...occurrence.timeline
       ]
     };
@@ -232,6 +280,16 @@ export function filterOccurrences(
   });
 }
 
+export function getPlateHistory(occurrences: OccurrenceDetail[], plate: string, excludeId?: string) {
+  const normalized = normalizePlate(plate);
+  if (!normalized) {
+    return [];
+  }
+  return occurrences
+    .filter((occurrence) => occurrence.id !== excludeId && normalizePlate(occurrence.vehicle.plate) === normalized)
+    .sort((a, b) => new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime());
+}
+
 function buildAI(plate: string, priority: Priority): AIAnalysis {
   return {
     id: `ai-${crypto.randomUUID()}`,
@@ -241,8 +299,11 @@ function buildAI(plate: string, priority: Priority): AIAnalysis {
     severitySuggestion: priority,
     detectedPlate: normalizePlate(plate),
     plateDivergence: false,
-    summary: "Dano visual detectado na regiao dianteira/lateral. Ha indicios de parachoque, pintura e suporte afetados.",
-    nextStep: "Iniciar vistoria tecnica, anexar fotos complementares e definir encaminhamento para patio ou oficina.",
+    vehicleType: "Veículo de passeio",
+    evidence: "Placa visivel em imagem operacional",
+    operationalRisk: "Risco calculado pelo nivel informado e historico da placa",
+    summary: "Imagem analisada como evidencia de seguranca. A placa foi associada ao registro e deve permanecer na timeline.",
+    nextStep: "Validar placa, unidade e decisao do supervisor antes de resolver.",
     createdAt: new Date().toISOString()
   };
 }
@@ -251,16 +312,32 @@ function buildAIFromResult(plate: string, result: ParkFlowAIResult): AIAnalysis 
   return {
     id: `ai-${crypto.randomUUID()}`,
     provider: "N8N_OPENAI",
-    model: "parkflow-webhook",
+    model: "parkflow-security-webhook",
     confidenceScore: result.confidence,
     severitySuggestion: result.severity,
-    damageDetected: result.damageDetected,
-    damageType: result.damageType,
-    affectedParts: result.affectedParts,
+    vehicleType: result.vehicleType,
+    evidence: result.evidence,
+    operationalRisk: result.operationalRisk,
     detectedPlate: result.detectedPlate ?? normalizePlate(plate),
     plateDivergence: Boolean(result.detectedPlate && normalizePlate(result.detectedPlate) !== normalizePlate(plate)),
     summary: result.summary,
     nextStep: result.nextStep,
+    createdAt: new Date().toISOString()
+  };
+}
+
+function buildPlateAlert(plate: string, previous: OccurrenceDetail): PlateAlert {
+  return {
+    id: `alert-${crypto.randomUUID()}`,
+    title: "Placa com historico de suspeita",
+    message: PLATE_ALERT_MESSAGE,
+    plate: normalizePlate(plate),
+    previousOccurrenceId: previous.id,
+    previousOccurrenceCode: previous.occurrenceCode,
+    previousUnit: previous.location,
+    previousDate: previous.reportedAt,
+    previousType: previous.type,
+    riskLevel: previous.priority,
     createdAt: new Date().toISOString()
   };
 }

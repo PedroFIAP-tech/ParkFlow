@@ -1,6 +1,9 @@
 package br.com.parkflow.mapper;
 
 import br.com.parkflow.dto.ai.AIAnalysisResponse;
+import br.com.parkflow.dto.alert.AlertResponse;
+import br.com.parkflow.dto.unit.UnitResponse;
+import br.com.parkflow.entity.AlertEntity;
 import br.com.parkflow.dto.occurrence.FileResponse;
 import br.com.parkflow.dto.occurrence.TimelineResponse;
 import br.com.parkflow.dto.user.UserResponse;
@@ -10,6 +13,7 @@ import br.com.parkflow.entity.OccurrenceDocumentEntity;
 import br.com.parkflow.entity.OccurrencePhotoEntity;
 import br.com.parkflow.entity.OccurrenceTimelineEntity;
 import br.com.parkflow.entity.RoleEntity;
+import br.com.parkflow.entity.UnitEntity;
 import br.com.parkflow.entity.UserEntity;
 import br.com.parkflow.entity.VehicleEntity;
 import org.springframework.stereotype.Component;
@@ -38,6 +42,19 @@ public class ParkFlowMapper {
             vehicle.getColor(),
             vehicle.getYear(),
             vehicle.getOwnerName()
+        );
+    }
+
+    public UnitResponse toUnitResponse(UnitEntity unit) {
+        return new UnitResponse(
+            unit.getId(),
+            unit.getName(),
+            unit.getCode(),
+            unit.getType(),
+            unit.getContactName(),
+            unit.getPhone(),
+            unit.getAddress(),
+            unit.getCity()
         );
     }
 
@@ -86,6 +103,9 @@ public class ParkFlowMapper {
             analysis.getConfidenceScore(),
             analysis.getSeveritySuggestion(),
             analysis.getDetectedPlate(),
+            analysis.getVehicleType(),
+            analysis.getEvidence(),
+            analysis.getOperationalRisk(),
             analysis.getPlateDivergence(),
             analysis.getSummary(),
             analysis.getNextStep(),
@@ -93,5 +113,21 @@ public class ParkFlowMapper {
             analysis.getCreatedAt()
         );
     }
-}
 
+    public AlertResponse toAlertResponse(AlertEntity alert) {
+        var previous = alert.getPreviousOccurrence();
+        return new AlertResponse(
+            alert.getId(),
+            alert.getTitle(),
+            alert.getMessage(),
+            alert.getVehicle().getPlate(),
+            previous == null ? null : previous.getId(),
+            previous == null ? null : previous.getOccurrenceCode(),
+            alert.getPreviousUnit(),
+            alert.getPreviousDate(),
+            alert.getPreviousType(),
+            alert.getRiskLevel(),
+            alert.getCreatedAt()
+        );
+    }
+}

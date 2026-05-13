@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Lock, Radar, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Lock, Radar, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 import { PremiumButton } from "@/components/design-system";
 import { Toast, type ToastState } from "@/components/toast";
 import { login } from "@/lib/api";
@@ -44,26 +45,20 @@ export default function LoginPage() {
         <section className="hidden min-h-[620px] rounded-2xl border border-line bg-slate-950/45 p-8 shadow-glow backdrop-blur-2xl lg:flex lg:flex-col lg:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-electric/35 bg-brand/20">
-                <ShieldCheck className="h-6 w-6 text-electric" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">ParkFlow</p>
-                <h1 className="text-2xl font-semibold text-white">Operational Intelligence</h1>
-              </div>
+              <BrandLogo priority className="h-16 w-72" />
             </div>
             <h2 className="mt-12 max-w-2xl text-5xl font-semibold leading-tight text-white">
-              Uma central premium para sinistros, vistorias e decisoes rapidas.
+              Uma central privada para placas suspeitas, evidencias e alertas entre unidades.
             </h2>
             <p className="mt-5 max-w-xl text-base leading-7 text-slate-400">
-              Interface escura, fila operacional, timeline, upload de evidencias e IA aplicada ao fluxo real do operador.
+              Interface escura, fila operacional, timeline por placa, upload de evidencias e IA assistiva para o operador.
             </p>
           </div>
 
           <div className="grid gap-3 md:grid-cols-3">
             {[
               { icon: Radar, title: "Tempo real", text: "Prioridade e status na primeira dobra." },
-              { icon: Sparkles, title: "IA assistiva", text: "Resumo, gravidade e proximo passo." },
+              { icon: Sparkles, title: "IA assistiva", text: "Placa, evidencia, risco e resumo." },
               { icon: Lock, title: "Enterprise", text: "JWT, API e dados protegidos no backend." }
             ].map((item) => {
               const Icon = item.icon;
@@ -80,14 +75,10 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="glass-panel rounded-2xl p-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-electric/35 bg-brand/20">
-              <ShieldCheck className="h-6 w-6 text-electric" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Acesso seguro</p>
-              <h1 className="text-2xl font-semibold text-white">Entrar no ParkFlow</h1>
-            </div>
+            <BrandLogo priority className="h-14 w-64" />
           </div>
+          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Acesso seguro</p>
+          <h1 className="mt-1 text-2xl font-semibold text-white">Entrar no SmartPark</h1>
 
           <div className="mt-8 space-y-4">
             <label className="block">

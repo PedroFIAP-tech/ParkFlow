@@ -1,14 +1,14 @@
 # ParkFlow
 
-Central operacional inteligente para gestao de ocorrencias e sinistros veiculares.
+Central privada Smart Parking Security AI para seguranca operacional de estacionamentos, leitura de placa, evidencias, historico de suspeitas e alertas entre unidades.
 
 ## Stack definida
 
 - Frontend: Next.js + TypeScript + Tailwind, deploy na Vercel
 - Backend: Java Spring Boot, deploy na Render
-- Banco: PostgreSQL em Docker
+- Banco: Neon PostgreSQL ou PostgreSQL em Docker para desenvolvimento local
 - IA: workflows n8n chamando OpenAI por HTTP Request
-- Storage: ainda nao implementado em producao
+- Storage: Cloudinary preparado no backend
 
 ## Estrutura
 
@@ -29,7 +29,7 @@ NEXT_PUBLIC_N8N_ANALYZE_WEBHOOK_URL=https://pedrosilvapriv.app.n8n.cloud/webhook
 NEXT_PUBLIC_N8N_OCR_WEBHOOK_URL=https://pedrosilvapriv.app.n8n.cloud/webhook/parkflow-ocr
 ```
 
-Os workflows atuais recebem `multipart/form-data` com o arquivo real no campo `image`. Ainda nao existe pipeline real de storage/Cloudinary no produto.
+Os workflows atuais recebem `multipart/form-data` com o arquivo real no campo `image` e devem retornar placa, tipo de veiculo, evidencia relevante, risco operacional e resumo.
 
 ### Frontend
 
@@ -53,7 +53,13 @@ JWT_SECRET=parkflow_2026_ultra_secure_jwt_secret
 CORS_ALLOWED_ORIGINS=https://seu-front.vercel.app
 ```
 
-### Banco
+### Banco e entidades
+
+Modelo principal: `users`, `units`, `vehicles`, `occurrences`, `occurrence_images`, `alerts`, `ai_analysis` e `audit_logs`.
+
+Ao abrir uma ocorrencia com placa ja existente na base interna, o backend gera alerta automatico de reincidencia com unidade anterior, data, tipo e nivel de risco.
+
+### Banco local
 
 As tabelas sao criadas por Flyway em `backend/src/main/resources/db/migration`.
 
@@ -121,7 +127,8 @@ Render:
 - criar Web Service via `render.yaml`;
 - apontar para `backend/Dockerfile`;
 - configurar variaveis do backend.
-- se o backend estiver publicado na Render, o banco PostgreSQL em Docker tambem precisa estar acessivel em uma maquina/servidor publico. Um container rodando localmente no seu PC nao sera acessivel pela Render.
+- usar Neon PostgreSQL em producao;
+- configurar variaveis do backend no Render.
 
 Vercel:
 

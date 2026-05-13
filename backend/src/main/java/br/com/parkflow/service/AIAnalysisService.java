@@ -46,12 +46,15 @@ public class AIAnalysisService {
         var analysis = new AIAnalysisEntity();
         analysis.setOccurrence(occurrence);
         analysis.setPhoto(photos.stream().findFirst().orElse(null));
-        analysis.setAnalysisType(AIAnalysisType.OCCURRENCE_TRIAGE);
+        analysis.setAnalysisType(AIAnalysisType.EVIDENCE_ANALYSIS);
         analysis.setProvider(result.provider());
         analysis.setModel(result.model());
         analysis.setConfidenceScore(result.confidenceScore());
         analysis.setSeveritySuggestion(result.severitySuggestion());
         analysis.setDetectedPlate(result.detectedPlate());
+        analysis.setVehicleType(result.vehicleType());
+        analysis.setEvidence(result.evidence());
+        analysis.setOperationalRisk(result.operationalRisk());
         analysis.setPlateDivergence(result.plateDivergence());
         analysis.setSummary(result.summary());
         analysis.setNextStep(result.nextStep());
@@ -63,7 +66,7 @@ public class AIAnalysisService {
         occurrenceService.appendTimeline(
             occurrence,
             TimelineEventType.IA_ANALISOU,
-            "Analise inteligente concluida",
+            "Analise de evidencia concluida",
             result.summary(),
             occurrence.getStatus(),
             occurrence.getStatus()

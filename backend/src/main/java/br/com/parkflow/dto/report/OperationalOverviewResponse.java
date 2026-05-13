@@ -4,8 +4,7 @@ public record OperationalOverviewResponse(
     long openOccurrences,
     long criticalOccurrences,
     long highPriorityOccurrences,
-    long waitingInspection,
+    long activeAlerts,
     long inAnalysis
 ) {
 }
-

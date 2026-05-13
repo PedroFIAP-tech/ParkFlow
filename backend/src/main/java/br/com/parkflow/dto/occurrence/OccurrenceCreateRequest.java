@@ -7,12 +7,14 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.UUID;
+
 public record OccurrenceCreateRequest(
     @Valid @NotNull VehicleRequest vehicle,
     @NotNull OccurrenceType type,
     Priority priority,
     @NotBlank String location,
-    String description
+    String description,
+    UUID unitId
 ) {
 }
-

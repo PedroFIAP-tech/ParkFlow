@@ -22,9 +22,8 @@ public class ReportService {
             occurrenceRepository.countByStatus(OccurrenceStatus.ABERTA),
             occurrenceRepository.countByPriority(Priority.CRITICA),
             occurrenceRepository.countByPriority(Priority.ALTA),
-            occurrenceRepository.countByStatus(OccurrenceStatus.AGUARDANDO_VISTORIA),
+            occurrenceRepository.countByStatus(OccurrenceStatus.ALERTA_GERADO),
             occurrenceRepository.countByStatus(OccurrenceStatus.EM_ANALISE)
         );
     }
 }
-

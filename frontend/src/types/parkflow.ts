@@ -1,14 +1,24 @@
 export type Priority = "BAIXA" | "MEDIA" | "ALTA" | "CRITICA";
 export type OccurrenceStatus =
   | "ABERTA"
-  | "AGUARDANDO_VISTORIA"
   | "EM_ANALISE"
-  | "AGUARDANDO_DOCUMENTO"
-  | "AGUARDANDO_PECA"
-  | "ENCAMINHADA_PATIO"
-  | "ENCAMINHADA_OFICINA"
-  | "FINALIZADA"
+  | "ALERTA_GERADO"
+  | "MONITORAMENTO"
+  | "RESOLVIDA"
   | "CANCELADA";
+
+export type OccurrenceType =
+  | "PLACA_SUSPEITA"
+  | "ACESSO_NAO_AUTORIZADO"
+  | "CONDUTA_SUSPEITA"
+  | "INVASAO"
+  | "COLISAO"
+  | "VANDALISMO"
+  | "DESACORDO_OPERACIONAL"
+  | "EVASAO"
+  | "FURTO_ROUBO"
+  | "DANO_PATRIMONIAL"
+  | "OUTROS";
 
 export type Vehicle = {
   id: string;
@@ -27,9 +37,9 @@ export type AIAnalysis = {
   model: string;
   confidenceScore: number;
   severitySuggestion: Priority;
-  damageDetected?: string;
-  damageType?: string;
-  affectedParts?: string[];
+  vehicleType?: string;
+  evidence?: string;
+  operationalRisk?: string;
   detectedPlate: string;
   plateDivergence: boolean;
   summary: string;
@@ -37,16 +47,31 @@ export type AIAnalysis = {
   createdAt: string;
 };
 
+export type PlateAlert = {
+  id: string;
+  title: string;
+  message: string;
+  plate: string;
+  previousOccurrenceId?: string;
+  previousOccurrenceCode?: string;
+  previousUnit: string;
+  previousDate: string;
+  previousType: OccurrenceType | string;
+  riskLevel: Priority;
+  createdAt: string;
+};
+
 export type OccurrenceSummary = {
   id: string;
   occurrenceCode: string;
   vehicle: Vehicle;
-  type: string;
+  type: OccurrenceType | string;
   status: OccurrenceStatus;
   priority: Priority;
   location: string;
   stoppedMinutes: number;
   latestAIAnalysis?: AIAnalysis | null;
+  latestAlert?: PlateAlert | null;
   updatedAt: string;
 };
 
@@ -65,5 +90,18 @@ export type OccurrenceDetail = OccurrenceSummary & {
   documents: Array<{ id: string; url: string; originalFilename?: string }>;
   timeline: TimelineEvent[];
   aiAnalyses: AIAnalysis[];
+  alerts: PlateAlert[];
   reportedAt: string;
+};
+
+export type Unit = {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  city: string;
+  address?: string;
+  contactName?: string;
+  phone?: string;
+  active?: boolean;
 };

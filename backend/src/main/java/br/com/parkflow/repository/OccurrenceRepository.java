@@ -19,13 +19,17 @@ public interface OccurrenceRepository extends JpaRepository<OccurrenceEntity, UU
 
     long countByPriority(Priority priority);
 
+    Optional<OccurrenceEntity> findFirstByVehicle_IdAndActiveTrueOrderByReportedAtDesc(UUID vehicleId);
+
     @Query("""
         select o from OccurrenceEntity o
         join fetch o.vehicle v
         where (:search is null
             or lower(o.occurrenceCode) like lower(concat('%', :search, '%'))
             or lower(v.plate) like lower(concat('%', :search, '%'))
-            or lower(coalesce(v.chassis, '')) like lower(concat('%', :search, '%')))
+            or lower(coalesce(v.chassis, '')) like lower(concat('%', :search, '%'))
+            or lower(str(o.type)) like lower(concat('%', :search, '%'))
+            or lower(o.location) like lower(concat('%', :search, '%')))
         order by o.updatedAt desc
         """)
     List<OccurrenceEntity> searchOperationalQueue(@Param("search") String search);

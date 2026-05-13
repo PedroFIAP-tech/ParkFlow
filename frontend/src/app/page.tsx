@@ -3,16 +3,20 @@
 import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  AlertTriangle,
   BarChart3,
   Bell,
+  Building2,
   Camera,
   Car,
   Check,
+  CheckCircle2,
+  ChevronDown,
   ChevronRight,
-  ClipboardCheck,
   ClipboardList,
   Clock3,
   FileText,
+  Flag,
   Home as HomeIcon,
   LogOut,
   Menu,
@@ -20,18 +24,19 @@ import {
   Plus,
   Search,
   Settings,
-  Shield,
+  Radar,
   Sparkles,
   User,
-  Warehouse,
   X
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 import { InspectionModal } from "@/components/inspection-modal";
 import { MobileNav } from "@/components/mobile-nav";
 import { NewOccurrenceModal } from "@/components/new-occurrence-modal";
+import { RegisterVehicleModal } from "@/components/register-vehicle-modal";
 import { Toast, type ToastState } from "@/components/toast";
 import { VehicleSearchModal } from "@/components/vehicle-search-modal";
 import {
@@ -41,9 +46,20 @@ import {
   loadOccurrences,
   saveOccurrences,
   statusLabel,
+  typeLabel,
   type InspectionInput,
   type NewOccurrenceInput
 } from "@/lib/occurrence-store";
+import {
+  createVehiclePresence,
+  loadVehiclePresence,
+  movementLabel,
+  profileLabel,
+  saveVehiclePresence,
+  updateVehiclePresenceStatus,
+  type VehiclePresence,
+  type VehiclePresenceInput
+} from "@/lib/vehicle-presence-store";
 import type { OccurrenceDetail, OccurrenceStatus, Priority, TimelineEvent } from "@/types/parkflow";
 
 type StatusFilter = OccurrenceStatus | "TODOS";
@@ -58,10 +74,10 @@ type NotificationItem = {
 const statusFilters: Array<{ label: string; value: StatusFilter }> = [
   { label: "Todos", value: "TODOS" },
   { label: "Aberta", value: "ABERTA" },
-  { label: "Aguardando Vistoria", value: "AGUARDANDO_VISTORIA" },
   { label: "Em Analise", value: "EM_ANALISE" },
-  { label: "Aguardando Pecas", value: "AGUARDANDO_PECA" },
-  { label: "Finalizada", value: "FINALIZADA" }
+  { label: "Alerta Gerado", value: "ALERTA_GERADO" },
+  { label: "Monitoramento", value: "MONITORAMENTO" },
+  { label: "Resolvida", value: "RESOLVIDA" }
 ];
 
 const priorityFilters: Array<{ label: string; value: PriorityFilter }> = [
@@ -83,32 +99,34 @@ const vehicleImages = [
 const initialNotifications: NotificationItem[] = [
   {
     id: "n-1",
-    title: "Ocorrencia critica parada",
-    description: "BRP4K21 esta ha mais de 3h sem mudanca de status.",
+    title: "Placa critica em alerta",
+    description: "BRP4K21 tem historico em outra unidade e precisa de decisao do supervisor.",
     read: false
   },
   {
     id: "n-2",
-    title: "IA concluiu triagem",
-    description: "Analise visual sugeriu severidade alta para FLO2W88.",
+    title: "IA concluiu evidencia",
+    description: "Analise visual sugeriu risco alto para FLO2W88.",
     read: false
   },
   {
     id: "n-3",
-    title: "Documento pendente",
-    description: "Checklist operacional precisa ser anexado ao caso PF-2026-000147.",
+    title: "Consulta de placa pendente",
+    description: "Confirme historico interno antes de resolver PF-2026-000147.",
     read: false
   }
 ];
 
 const drawerItems = [
-  { label: "Inicio", icon: HomeIcon, action: "home" },
-  { label: "Ocorrencias", icon: ClipboardList, action: "occurrences" },
-  { label: "Nova Ocorrencia", icon: Plus, action: "new" },
-  { label: "Vistorias", icon: ClipboardCheck, action: "inspection" },
-  { label: "Patios", icon: Warehouse, action: "yards" },
-  { label: "Relatorios/BI", icon: BarChart3, action: "reports" },
-  { label: "Configuracoes", icon: Settings, action: "settings" },
+  { label: "Dashboard", icon: HomeIcon, action: "home" },
+  { label: "Registrar Veículo", icon: Car, action: "registerVehicle" },
+  { label: "Ocorrências", icon: ClipboardList, action: "occurrences" },
+  { label: "Nova Ocorrência", icon: Plus, action: "new" },
+  { label: "Evidências", icon: Camera, action: "inspection" },
+  { label: "Unidades", icon: Building2, action: "units" },
+  { label: "Suspeitas", icon: Radar, action: "suspects" },
+  { label: "Relatórios/BI", icon: BarChart3, action: "reports" },
+  { label: "Configurações", icon: Settings, action: "settings" },
   { label: "Sair", icon: LogOut, action: "logout" }
 ];
 
@@ -120,6 +138,7 @@ export default function Home() {
   const [priority, setPriority] = useState<PriorityFilter>("TODAS");
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [vehicleRegisterOpen, setVehicleRegisterOpen] = useState(false);
   const [inspectionOpen, setInspectionOpen] = useState(false);
   const [vehicleSearchOpen, setVehicleSearchOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -128,10 +147,17 @@ export default function Home() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [toast, setToast] = useState<ToastState>(null);
   const [notifications, setNotifications] = useState(initialNotifications);
+  const [vehicleActivities, setVehicleActivities] = useState<VehiclePresence[]>([]);
 
   useEffect(() => {
     setOccurrences(loadOccurrences());
+    setVehicleActivities(loadVehiclePresence());
     setReady(true);
+    if (window.location.search.includes("register=1")) {
+      setVehicleRegisterOpen(true);
+      window.history.replaceState(null, "", window.location.pathname);
+      return;
+    }
     if (window.location.search.includes("create=1")) {
       setModalOpen(true);
       window.history.replaceState(null, "", window.location.pathname);
@@ -144,10 +170,12 @@ export default function Home() {
   );
 
   const recentTimeline = useMemo(() => buildRecentTimeline(occurrences), [occurrences]);
+  const todayLabel = useMemo(() => new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date()), []);
 
   const stats = useMemo(() => {
-    const finalizedToday = occurrences.filter((item) => item.status === "FINALIZADA" && isToday(item.updatedAt)).length;
-    const yardCount = occurrences.filter((item) => item.status === "ENCAMINHADA_PATIO" || item.location.toLowerCase().includes("patio")).length;
+    const resolvedToday = occurrences.filter((item) => item.status === "RESOLVIDA" && isToday(item.updatedAt)).length;
+    const alertCount = occurrences.filter((item) => item.status === "ALERTA_GERADO" || item.alerts.length > 0).length;
+    const monitoredCount = occurrences.filter((item) => item.status === "MONITORAMENTO" || item.priority === "ALTA" || item.priority === "CRITICA").length;
 
     return [
       {
@@ -160,34 +188,92 @@ export default function Home() {
         onClick: () => setStatus("ABERTA")
       },
       {
-        label: "Aguardando Vistoria",
-        value: String(occurrences.filter((item) => item.status === "AGUARDANDO_VISTORIA").length),
-        delta: "fila de campo",
-        icon: Clock3,
-        tone: "bg-amber-500",
-        active: status === "AGUARDANDO_VISTORIA",
-        onClick: () => setStatus("AGUARDANDO_VISTORIA")
+        label: "Alertas Ativos",
+        value: String(alertCount),
+        delta: "reincidencias",
+        icon: Bell,
+        tone: "bg-red-600",
+        active: status === "ALERTA_GERADO",
+        onClick: () => setStatus("ALERTA_GERADO")
       },
       {
-        label: "Finalizadas Hoje",
-        value: String(finalizedToday),
-        delta: "ver concluidas",
+        label: "Suspeitas Monitoradas",
+        value: String(monitoredCount),
+        delta: "ver lista",
+        icon: Radar,
+        tone: "bg-amber-500",
+        active: false,
+        onClick: () => router.push("/suspeitas")
+      },
+      {
+        label: "Resolvidas Hoje",
+        value: String(resolvedToday),
+        delta: "ver resolvidas",
         icon: Check,
         tone: "bg-green-500",
-        active: status === "FINALIZADA",
-        onClick: () => setStatus("FINALIZADA")
-      },
-      {
-        label: "Veiculos no Patio",
-        value: String(yardCount),
-        delta: "abrir patios",
-        icon: Car,
-        tone: "bg-violet-600",
         active: false,
-        onClick: () => router.push("/patios")
+        onClick: () => setStatus("RESOLVIDA")
       }
     ];
   }, [occurrences, router, status]);
+
+  const activeAlertOccurrence = useMemo(
+    () =>
+      occurrences.find((item) => item.vehicle.plate === "ABC1D23") ??
+      occurrences.find((item) => item.status === "ALERTA_GERADO" || item.alerts.length > 0 || item.priority === "CRITICA") ??
+      occurrences[0],
+    [occurrences]
+  );
+
+  const operationalSummary = useMemo(() => {
+    const activeAlerts = occurrences.filter((item) => item.status === "ALERTA_GERADO" || item.alerts.length > 0).length;
+    const suspiciousPlates = new Set(
+      [
+        ...occurrences
+          .filter((item) => item.status === "ALERTA_GERADO" || item.alerts.length > 0 || item.priority === "ALTA" || item.priority === "CRITICA")
+          .map((item) => item.vehicle.plate),
+        ...vehicleActivities.filter((item) => item.alert || item.status === "SINALIZADO").map((item) => item.plate)
+      ]
+    ).size;
+
+    return [
+      {
+        label: "Ocorrências",
+        value: String(Math.max(occurrences.length, 24)),
+        delta: "+12% vs ontem",
+        icon: Car,
+        tone: "blue" as const,
+        onClick: () => router.push("/ocorrencias")
+      },
+      {
+        label: "Alertas Ativos",
+        value: String(Math.max(activeAlerts, 8)),
+        delta: "+6% vs ontem",
+        icon: Bell,
+        tone: "green" as const,
+        onClick: () => {
+          setStatus("ALERTA_GERADO");
+          router.push("/ocorrencias");
+        }
+      },
+      {
+        label: "Unidades Online",
+        value: "12",
+        delta: "100% online",
+        icon: Building2,
+        tone: "purple" as const,
+        onClick: () => router.push("/unidades")
+      },
+      {
+        label: "Placas Suspeitas",
+        value: String(Math.max(suspiciousPlates, 37)),
+        delta: "+8% vs ontem",
+        icon: Clock3,
+        tone: "amber" as const,
+        onClick: () => router.push("/suspeitas")
+      }
+    ];
+  }, [occurrences, router, vehicleActivities]);
 
   const unreadCount = notifications.filter((notification) => !notification.read).length;
 
@@ -201,18 +287,58 @@ export default function Home() {
     window.setTimeout(() => setToast(null), 2800);
   }
 
+  function persistVehicleActivities(next: VehiclePresence[]) {
+    setVehicleActivities(next);
+    saveVehiclePresence(next);
+  }
+
+  function handleRegisterVehicle(input: VehiclePresenceInput) {
+    const created = createVehiclePresence(input, occurrences);
+    persistVehicleActivities([created, ...vehicleActivities]);
+    showToast({
+      type: created.alert ? "error" : "success",
+      message: created.alert?.message ?? `${created.plate} registrado em ${created.unit}.`
+    });
+  }
+
   function handleCreateOccurrence(input: NewOccurrenceInput) {
     const created = createOccurrence(input, occurrences);
     persist([created, ...occurrences]);
     setStatus("TODOS");
     setPriority("TODAS");
     setSearch("");
-    showToast({ type: "success", message: "Ocorrencia criada e adicionada a fila operacional." });
+    showToast({
+      type: created.alerts.length ? "error" : "success",
+      message: created.alerts[0]?.message ?? "Ocorrencia criada e adicionada a fila operacional."
+    });
   }
 
   function handleCreateInspection(input: InspectionInput) {
     persist(applyInspection(occurrences, input));
-    showToast({ type: "success", message: "Vistoria iniciada. Status movido para EM_ANALISE." });
+    showToast({ type: "success", message: "Evidencia registrada. Status movido para EM_ANALISE." });
+  }
+
+  function validateVehicleActivity(id: string) {
+    const next = updateVehiclePresenceStatus(vehicleActivities, id, "VALIDADO");
+    persistVehicleActivities(next);
+    showToast({ type: "success", message: "Leitura validada e presenca registrada na unidade." });
+  }
+
+  function signalVehicleActivity(activity: VehiclePresence) {
+    const created = createOccurrence(
+      {
+        plate: activity.plate,
+        location: activity.unit,
+        type: "PLACA_SUSPEITA",
+        priority: activity.alert?.riskLevel ?? "ALTA",
+        description: `${profileLabel(activity.profile)} em ${movementLabel(activity.movement).toLowerCase()} sinalizado pela rotina operacional.`,
+        photoUrl: activity.imageUrl
+      },
+      occurrences
+    );
+    persist([created, ...occurrences]);
+    persistVehicleActivities(updateVehiclePresenceStatus(vehicleActivities, activity.id, "SINALIZADO"));
+    showToast({ type: "error", message: "Ocorrencia critica aberta a partir da leitura da placa." });
   }
 
   function runDrawerAction(action: string) {
@@ -228,6 +354,10 @@ export default function Home() {
       router.push("/ocorrencias");
       return;
     }
+    if (action === "registerVehicle") {
+      setVehicleRegisterOpen(true);
+      return;
+    }
     if (action === "new") {
       setModalOpen(true);
       return;
@@ -236,8 +366,12 @@ export default function Home() {
       setInspectionOpen(true);
       return;
     }
-    if (action === "yards") {
-      router.push("/patios");
+    if (action === "units") {
+      router.push("/unidades");
+      return;
+    }
+    if (action === "suspects") {
+      router.push("/suspeitas");
       return;
     }
     if (action === "reports") {
@@ -245,7 +379,7 @@ export default function Home() {
       return;
     }
     if (action === "settings") {
-      showToast({ type: "info", message: "Preferencias prontas para conectar ao perfil do usuario." });
+      showToast({ type: "info", message: "Preferencias prontas para perfis Operador, Supervisor e Admin." });
       return;
     }
     showToast({ type: "info", message: "Sessao demo encerrada sem alterar seus dados." });
@@ -264,6 +398,14 @@ export default function Home() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onCreate={handleCreateOccurrence}
+        occurrences={occurrences}
+        onError={(message) => showToast({ type: "error", message })}
+      />
+      <RegisterVehicleModal
+        open={vehicleRegisterOpen}
+        occurrences={occurrences}
+        onClose={() => setVehicleRegisterOpen(false)}
+        onRegister={handleRegisterVehicle}
         onError={(message) => showToast({ type: "error", message })}
       />
       <InspectionModal open={inspectionOpen} occurrences={occurrences} onClose={() => setInspectionOpen(false)} onCreate={handleCreateInspection} />
@@ -288,7 +430,7 @@ export default function Home() {
         <DesktopSidebar onAction={runDrawerAction} />
 
         <section className="min-w-0 flex-1">
-          <div className="mx-auto max-w-3xl rounded-[1.75rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.18),transparent_36%),linear-gradient(180deg,#050914_0%,#070b15_100%)] shadow-2xl lg:max-w-none lg:rounded-3xl">
+          <div className="mx-auto max-w-[430px] rounded-[1.75rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.18),transparent_36%),linear-gradient(180deg,#050914_0%,#070b15_100%)] shadow-2xl lg:max-w-[520px] lg:rounded-3xl">
             <header className="flex items-center justify-between gap-4 px-5 pt-6 lg:px-7">
               <div className="flex min-w-0 items-center gap-3">
                 <button
@@ -301,15 +443,9 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => runDrawerAction("home")}
-                  className="flex min-w-0 items-center gap-3 rounded-xl text-left transition hover:opacity-90"
+                  className="flex min-w-0 items-center rounded-xl text-left transition hover:opacity-90"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-400/40 bg-blue-600/15">
-                    <Shield className="h-6 w-6 text-blue-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <h1 className="truncate text-2xl font-bold tracking-tight">ParkFlow</h1>
-                    <p className="truncate text-sm text-slate-400">Gestao Inteligente de Sinistros</p>
-                  </div>
+                  <BrandLogo priority className="h-12 w-52 sm:w-64" />
                 </button>
               </div>
 
@@ -342,116 +478,46 @@ export default function Home() {
               </div>
             </header>
 
-            <div className="px-5 pb-6 pt-5 lg:px-7">
-              <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#101b55] shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-                <div className="flex flex-col gap-4 bg-gradient-to-r from-blue-700/70 to-[#111948] p-5 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold">Bom dia, Joao.</h2>
-                    <p className="mt-1 text-sm text-blue-100/80">Resumo operacional focado no que precisa de acao agora.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => showToast({ type: "info", message: "Dados atualizados para hoje em modo demo." })}
-                    className="flex w-fit shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-blue-50 transition hover:bg-white/15"
-                  >
-                    <Clock3 className="h-4 w-4" />
-                    Hoje, 12 Mai
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 bg-black/25 p-3 lg:grid-cols-4">
-                  {stats.map((stat, index) => {
-                    const Icon = stat.icon;
-                    return (
-                      <motion.button
-                        key={stat.label}
-                        type="button"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.04 }}
-                        onClick={stat.onClick}
-                        className={clsx(
-                          "rounded-2xl border bg-[#0c111d]/90 p-4 text-left shadow-inner transition hover:-translate-y-0.5 hover:border-blue-400/40 active:scale-[0.98]",
-                          stat.active ? "border-blue-400/60 ring-2 ring-blue-500/20" : "border-white/10"
-                        )}
-                      >
-                        <div className={`mb-5 flex h-10 w-10 items-center justify-center rounded-full ${stat.tone}`}>
-                          <Icon className="h-5 w-5 text-white" />
-                        </div>
-                        <p className="min-h-10 text-sm text-slate-300">{stat.label}</p>
-                        <strong className="mt-2 block text-3xl font-bold tracking-tight">{stat.value}</strong>
-                        <span className="mt-1 block text-sm font-semibold text-blue-300">{stat.delta}</span>
-                      </motion.button>
-                    );
-                  })}
-                </div>
+            <div className="px-4 pb-6 pt-6 sm:px-5 lg:px-6">
+              <section className="space-y-2">
+                <h1 className="text-[1.65rem] font-bold leading-tight tracking-normal text-white sm:text-3xl">
+                  Boa noite, Joao! <span aria-hidden="true">👋</span>
+                </h1>
+                <button
+                  type="button"
+                  onClick={() => showToast({ type: "info", message: "Seletor de unidade pronto para conectar ao perfil do operador." })}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-200"
+                >
+                  Unidade Jardins
+                  <ChevronDown className="h-4 w-4" />
+                </button>
               </section>
 
-              <section className="mt-4 rounded-2xl border border-white/10 bg-[#0b111d]/95 p-4">
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-bold">Acoes rapidas</h2>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStatus("TODOS");
-                      setPriority("TODAS");
-                      setSearch("");
-                    }}
-                    className="text-sm font-semibold text-blue-400 transition hover:text-blue-200"
-                  >
-                    Limpar filtros
-                  </button>
-                </div>
-                <div className="grid grid-cols-4 gap-3">
-                  <QuickAction label="Nova Ocorrencia" icon={Plus} tone="bg-violet-600" onClick={() => setModalOpen(true)} />
-                  <QuickAction label="Nova Vistoria" icon={Camera} tone="bg-blue-600" onClick={() => setInspectionOpen(true)} />
-                  <QuickAction label="Buscar Veiculo" icon={Search} tone="bg-green-500" onClick={() => setVehicleSearchOpen(true)} />
-                  <QuickAction label="Relatorios" icon={FileText} tone="bg-amber-500" onClick={() => router.push("/relatorios")} />
-                </div>
+              <section className="mt-6 grid grid-cols-2 gap-3">
+                <HomeActionCard
+                  variant="vehicle"
+                  title="Registrar"
+                  emphasis="Veículo"
+                  media="/CarroIcon.png"
+                  onClick={() => setVehicleRegisterOpen(true)}
+                />
+
+                <HomeActionCard
+                  variant="occurrence"
+                  title="Nova"
+                  emphasis="Ocorrência"
+                  media="/PalhetaIcon.png"
+                  onClick={() => setModalOpen(true)}
+                />
               </section>
 
-              <section className="mt-4 rounded-2xl border border-white/10 bg-[#0b111d]/95 p-4">
-                <div className="flex h-12 items-center gap-3 rounded-xl border border-white/10 bg-black/25 px-3">
-                  <Search className="h-5 w-5 text-blue-400" />
-                  <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Buscar por placa, ID, tipo ou local"
-                    className="h-full w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
-                  />
-                  {search ? (
-                    <button type="button" onClick={() => setSearch("")} className="text-xs font-semibold text-slate-400 hover:text-white">
-                      limpar
-                    </button>
-                  ) : null}
-                </div>
-
-                <div className="mt-4 flex gap-2 overflow-x-auto pb-1 premium-scrollbar">
-                  {statusFilters.map((item) => (
-                    <FilterButton key={item.value} active={status === item.value} onClick={() => setStatus(item.value)}>
-                      {item.label}
-                    </FilterButton>
-                  ))}
-                </div>
-                <div className="mt-2 flex gap-2 overflow-x-auto pb-1 premium-scrollbar">
-                  {priorityFilters.map((item) => (
-                    <FilterButton key={item.value} active={priority === item.value} onClick={() => setPriority(item.value)}>
-                      {item.label}
-                    </FilterButton>
-                  ))}
-                </div>
-              </section>
-
-              <section className="mt-4 rounded-2xl border border-white/10 bg-[#0b111d]/95 p-4">
+              <section className="mt-7">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-bold">Ocorrencias em andamento</h2>
-                    <p className="mt-1 text-xs text-slate-500">{filteredOccurrences.length} resultado(s) na fila atual.</p>
-                  </div>
+                  <h2 className="text-lg font-bold text-white">Atividade Recente</h2>
                   <button
                     type="button"
-                    onClick={() => router.push("/ocorrencias")}
-                    className="text-sm font-semibold text-blue-400 transition hover:text-blue-200"
+                    onClick={() => router.push("/veiculos")}
+                    className="text-sm font-bold text-electric transition hover:text-blue-200"
                   >
                     Ver todas
                   </button>
@@ -460,62 +526,60 @@ export default function Home() {
                 <div className="space-y-2">
                   {!ready ? (
                     Array.from({ length: 4 }).map((_, index) => <SkeletonRow key={index} />)
-                  ) : filteredOccurrences.length ? (
-                    filteredOccurrences.slice(0, 5).map((item, index) => (
-                      <OccurrenceRow
+                  ) : vehicleActivities.length ? (
+                    vehicleActivities.slice(0, 4).map((item) => (
+                      <VehicleActivityRow
                         key={item.id}
-                        occurrence={item}
-                        image={item.photos[0]?.url ?? vehicleImages[index % vehicleImages.length]}
-                        onClick={() => router.push(`/ocorrencias/${item.id}`)}
+                        activity={item}
+                        onValidate={() => validateVehicleActivity(item.id)}
+                        onSignal={() => signalVehicleActivity(item)}
                       />
                     ))
                   ) : (
-                    <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.03] p-6 text-center">
-                      <Search className="mx-auto h-8 w-8 text-blue-400" />
-                      <h3 className="mt-3 font-semibold text-white">Nada nessa fila</h3>
-                      <p className="mt-1 text-sm text-slate-400">Ajuste filtros ou abra uma nova ocorrencia para simular o fluxo.</p>
+                    <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-6 text-center">
+                      <Search className="mx-auto h-8 w-8 text-electric" />
+                      <h3 className="mt-3 font-semibold text-white">Nenhuma leitura recente</h3>
+                      <p className="mt-1 text-sm text-slate-400">Registre um veículo para alimentar a rotina operacional.</p>
                     </div>
                   )}
                 </div>
               </section>
 
-              <section className="mt-4 rounded-2xl border border-white/10 bg-[#0b111d]/95 p-4 xl:hidden">
-                <TimelineList events={recentTimeline} onOpen={(id) => router.push(`/ocorrencias/${id}`)} />
+              <ActiveSuspicionCard
+                occurrence={activeAlertOccurrence}
+                onClick={() => {
+                  if (activeAlertOccurrence) {
+                    router.push(`/ocorrencias/${activeAlertOccurrence.id}`);
+                    return;
+                  }
+                  router.push("/suspeitas");
+                }}
+              />
+
+              <section className="mt-7">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-bold text-white">Resumo Operacional</h2>
+                  <button
+                    type="button"
+                    onClick={() => showToast({ type: "info", message: "Resumo atualizado para hoje." })}
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 transition hover:text-slate-200"
+                  >
+                    Hoje
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {operationalSummary.map((item) => (
+                    <OperationalSummaryCard key={item.label} {...item} />
+                  ))}
+                </div>
               </section>
             </div>
           </div>
         </section>
-
-        <aside className="hidden w-[340px] shrink-0 space-y-4 xl:block">
-          <div className="rounded-2xl border border-white/10 bg-[#0b111d]/95 p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-blue-400/30 bg-blue-500/10">
-                <Sparkles className="h-5 w-5 text-blue-300" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">ParkFlow AI</p>
-                <h2 className="font-semibold text-white">Radar inteligente</h2>
-              </div>
-            </div>
-            <p className="mt-4 rounded-xl border border-blue-400/20 bg-blue-500/10 p-4 text-sm leading-6 text-blue-100">
-              {occurrences[0]?.latestAIAnalysis?.summary ?? "Anexe uma foto em uma ocorrencia para simular leitura visual, severidade e proximo passo."}
-            </p>
-            <button
-              type="button"
-              onClick={() => setVehicleSearchOpen(true)}
-              className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-400/30 bg-blue-600 text-sm font-semibold text-white transition hover:bg-blue-500"
-            >
-              <Search className="h-4 w-4" />
-              Buscar caso rapido
-            </button>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-[#0b111d]/95 p-5">
-            <TimelineList events={recentTimeline} onOpen={(id) => router.push(`/ocorrencias/${id}`)} />
-          </div>
-        </aside>
       </div>
 
-      <MobileNav onNewOccurrence={() => setModalOpen(true)} onMore={() => setMoreOpen(true)} />
+      <MobileNav onNewOccurrence={() => setVehicleRegisterOpen(true)} onMore={() => setMoreOpen(true)} />
     </main>
   );
 }
@@ -524,13 +588,7 @@ function DesktopSidebar({ onAction }: { onAction: (action: string) => void }) {
   return (
     <aside className="sticky top-8 hidden h-[calc(100vh-4rem)] w-72 shrink-0 rounded-3xl border border-white/10 bg-[#07101f]/90 p-4 shadow-2xl backdrop-blur-2xl lg:block">
       <div className="flex items-center gap-3 px-2 py-2">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-blue-400/35 bg-blue-600/20 shadow-glow">
-          <Shield className="h-6 w-6 text-blue-300" />
-        </div>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Brasil Park Ops</p>
-          <h2 className="text-xl font-semibold text-white">ParkFlow</h2>
-        </div>
+        <BrandLogo className="h-14 w-56" />
       </div>
       <nav className="mt-6 space-y-1">
         {drawerItems.map((item) => {
@@ -553,7 +611,7 @@ function DesktopSidebar({ onAction }: { onAction: (action: string) => void }) {
           <Sparkles className="h-4 w-4 text-blue-300" />
           Demo IA ativa
         </p>
-        <p className="mt-2 text-xs leading-5 text-slate-400">Upload, timeline e triagem funcionam localmente para apresentacao.</p>
+        <p className="mt-2 text-xs leading-5 text-slate-400">Upload, timeline e alertas por placa funcionam localmente para apresentacao.</p>
       </div>
     </aside>
   );
@@ -582,13 +640,7 @@ function SideDrawer({
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-400/35 bg-blue-600/20">
-                  <Shield className="h-5 w-5 text-blue-300" />
-                </div>
-                <div>
-                  <h2 className="font-semibold text-white">ParkFlow</h2>
-                  <p className="text-xs text-slate-500">Central operacional</p>
-                </div>
+                <BrandLogo className="h-11 w-48" />
               </div>
               <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-slate-400">
                 <X className="h-4 w-4" />
@@ -783,6 +835,165 @@ function MoreMenu({
   );
 }
 
+function HomeActionCard({
+  variant,
+  title,
+  emphasis,
+  media,
+  onClick
+}: {
+  variant: "vehicle" | "occurrence";
+  title: string;
+  emphasis: string;
+  media: string;
+  onClick: () => void;
+}) {
+  const isVehicle = variant === "vehicle";
+
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={clsx(
+        "group relative min-h-[104px] overflow-hidden rounded-2xl border p-3 text-left shadow-[0_18px_46px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5",
+        isVehicle
+          ? "border-electric/35 bg-[radial-gradient(circle_at_20%_10%,rgba(31,111,235,0.26),transparent_42%),linear-gradient(135deg,#07172e_0%,#06101e_100%)]"
+          : "border-danger/30 bg-[radial-gradient(circle_at_20%_10%,rgba(239,68,68,0.2),transparent_42%),linear-gradient(135deg,#211012_0%,#080a10_100%)]"
+      )}
+    >
+      <div className="flex h-full items-center gap-2">
+        <div className="grid h-16 w-[72px] shrink-0 place-items-center drop-shadow-[0_16px_20px_rgba(0,0,0,0.45)]">
+          <Image
+            src={media}
+            alt={`${title} ${emphasis}`}
+            width={96}
+            height={96}
+            className="h-16 w-[72px] object-contain"
+            priority
+          />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <span className="block text-base font-bold leading-5 text-white">{title}</span>
+          <span className={clsx("mt-0.5 block text-base font-bold leading-5", isVehicle ? "text-electric" : "text-danger")}>
+            {emphasis}
+          </span>
+        </div>
+
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-white/80 transition group-hover:bg-white/[0.14] group-hover:text-white">
+          <ChevronRight className="h-5 w-5" />
+        </span>
+      </div>
+    </motion.button>
+  );
+}
+
+function ActiveSuspicionCard({
+  occurrence,
+  onClick
+}: {
+  occurrence?: OccurrenceDetail;
+  onClick: () => void;
+}) {
+  const plate = occurrence?.vehicle.plate ?? "ABC1D23";
+  const description = occurrence?.description || "Tentativa de furto de veículo";
+  const lastOccurrence = occurrence?.reportedAt ? formatOccurrenceTimestamp(occurrence.reportedAt) : "10/05/2025 às 14:30";
+  const unit = occurrence?.location ?? "Unidade Jardim Paulista";
+
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.985 }}
+      onClick={onClick}
+      className="group relative mt-7 min-h-[152px] w-full overflow-hidden rounded-2xl border border-danger/55 bg-[radial-gradient(circle_at_78%_48%,rgba(239,68,68,0.18),transparent_35%),linear-gradient(135deg,rgba(70,13,17,0.72),rgba(6,9,14,0.98)_56%)] p-4 text-left shadow-[0_24px_70px_rgba(0,0,0,0.35)]"
+    >
+      <div className="relative z-10 flex min-h-[120px]">
+        <div className="min-w-0 flex-1 pr-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] text-danger">
+              <AlertTriangle className="h-4 w-4" />
+              ALERTA DE SUSPEITA ATIVA
+            </span>
+            <span className="text-[10px] font-black uppercase tracking-[0.12em] text-danger">
+              COMPARTILHADO ENTRE UNIDADES
+            </span>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <strong className="font-mono text-3xl font-black tracking-normal text-white">{plate}</strong>
+            <span className="rounded-lg border border-danger/25 bg-danger/15 px-3 py-1 text-xs font-black text-danger">ALTO RISCO</span>
+          </div>
+
+          <p className="mt-3 max-w-[230px] truncate text-sm font-semibold text-white">{description}</p>
+          <p className="mt-2 text-sm text-slate-400">Última ocorrência: {lastOccurrence}</p>
+          <p className="mt-1 text-sm text-slate-400">{unit}</p>
+        </div>
+
+        <div className="relative hidden w-28 shrink-0 items-end justify-center min-[390px]:flex">
+          <Image
+            src="https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=240&q=80"
+            alt="Veículo em alerta"
+            width={160}
+            height={120}
+            unoptimized
+            className="absolute bottom-1 right-2 h-24 w-32 rounded-xl object-cover opacity-50 mix-blend-screen saturate-75"
+          />
+        </div>
+        <span className="absolute bottom-9 right-1 z-20 flex h-9 w-9 items-center justify-center rounded-full text-white/75 transition group-hover:text-white">
+          <ChevronRight className="h-6 w-6" />
+        </span>
+      </div>
+    </motion.button>
+  );
+}
+
+function OperationalSummaryCard({
+  label,
+  value,
+  delta,
+  icon: Icon,
+  tone,
+  onClick
+}: {
+  label: string;
+  value: string;
+  delta: string;
+  icon: typeof Car;
+  tone: "blue" | "green" | "purple" | "amber";
+  onClick: () => void;
+}) {
+  const tones = {
+    blue: "border-electric/20 bg-electric/10 text-electric",
+    green: "border-success/20 bg-success/10 text-success",
+    purple: "border-violet-400/25 bg-violet-500/15 text-violet-300",
+    amber: "border-amber-400/25 bg-amber-500/15 text-amber-300"
+  };
+  const deltaTones = {
+    blue: "text-electric",
+    green: "text-success",
+    purple: "text-success",
+    amber: "text-success"
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="min-h-[118px] rounded-2xl border border-white/10 bg-[#0b1018]/90 p-3 text-left shadow-[0_16px_44px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 hover:border-white/20 active:scale-[0.98]"
+    >
+      <div className="flex items-center gap-3">
+        <span className={clsx("flex h-10 w-10 items-center justify-center rounded-xl border", tones[tone])}>
+          <Icon className="h-5 w-5" />
+        </span>
+        <strong className="text-2xl font-black text-white">{value}</strong>
+      </div>
+      <p className="mt-3 text-sm font-semibold text-slate-300">{label}</p>
+      <span className={clsx("mt-1 block text-xs font-bold", deltaTones[tone])}>{delta}</span>
+    </button>
+  );
+}
+
 function QuickAction({
   label,
   icon: Icon,
@@ -855,16 +1066,90 @@ function OccurrenceRow({
           <span className="text-slate-500">-</span>
           <span className="font-semibold text-white">{occurrence.vehicle.plate}</span>
         </div>
-        <p className="mt-1 truncate text-sm text-slate-400">{prettyType(occurrence.type)} - {occurrence.location}</p>
+        <p className="mt-1 truncate text-sm text-slate-400">{typeLabel(occurrence.type)} - {occurrence.location}</p>
       </div>
       <div className="hidden shrink-0 text-right sm:block">
         <span className={clsx("rounded-lg border px-2 py-1 text-xs font-semibold", statusTone(occurrence.status))}>
           {statusLabel(occurrence.status)}
         </span>
-        <p className="mt-2 text-xs text-slate-400">{occurrence.stoppedMinutes} min parado</p>
+        <p className="mt-2 text-xs text-slate-400">{occurrence.stoppedMinutes} min em aberto</p>
       </div>
       <ChevronRight className="h-5 w-5 shrink-0 text-slate-500 transition group-hover:text-blue-300" />
     </motion.button>
+  );
+}
+
+function VehicleActivityRow({
+  activity,
+  onValidate,
+  onSignal
+}: {
+  activity: VehiclePresence;
+  onValidate: () => void;
+  onSignal: () => void;
+}) {
+  const isValidated = activity.status === "VALIDADO";
+  const isSignaled = activity.status === "SINALIZADO";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={clsx(
+        "rounded-2xl border bg-[#0b1018]/90 p-3 shadow-[0_12px_36px_rgba(0,0,0,0.2)] transition",
+        activity.alert ? "border-danger/35" : "border-white/10"
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05]">
+            <Car className="h-7 w-7 text-electric" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-electric px-1.5 py-1 text-[11px] font-black text-white">{activity.source}</span>
+              <span className="font-mono text-base font-black text-white sm:text-lg">{activity.plate}</span>
+            </div>
+            <p className="mt-1 text-sm text-slate-400">
+              Leitura realizada há {formatRelativeMinutes(activity.createdAt)} min
+            </p>
+            <p className="mt-1 truncate text-sm text-slate-500">
+              {activity.unit} <span className="mx-1">•</span> {movementLabel(activity.movement)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 gap-2">
+          <button
+            type="button"
+            onClick={onValidate}
+            disabled={isValidated || isSignaled}
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-success/25 bg-success/10 px-2.5 text-xs font-bold text-success transition hover:bg-success/15 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            {isValidated ? "Validado" : "Validar"}
+          </button>
+          <button
+            type="button"
+            onClick={onSignal}
+            disabled={isSignaled}
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-danger/25 bg-danger/10 px-2.5 text-xs font-bold text-danger transition hover:bg-danger/15 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Flag className="h-4 w-4" />
+            {isSignaled ? "Sinalizado" : "Sinalizar"}
+          </button>
+        </div>
+      </div>
+
+      {activity.alert ? (
+        <div className="mt-3 rounded-lg border border-danger/25 bg-danger/10 p-3 text-sm leading-6 text-red-100">
+          {activity.alert.message}
+          <span className="block text-slate-300">
+            Unidade anterior: {activity.alert.previousUnit} - Risco: {activity.alert.riskLevel}
+          </span>
+        </div>
+      ) : null}
+    </motion.div>
   );
 }
 
@@ -935,24 +1220,33 @@ function buildRecentTimeline(occurrences: OccurrenceDetail[]) {
 function statusTone(status: OccurrenceStatus) {
   const tones: Record<OccurrenceStatus, string> = {
     ABERTA: "border-blue-400/20 bg-blue-500/20 text-blue-300",
-    AGUARDANDO_VISTORIA: "border-amber-400/25 bg-amber-500/15 text-amber-300",
     EM_ANALISE: "border-violet-400/25 bg-violet-500/15 text-violet-300",
-    AGUARDANDO_DOCUMENTO: "border-amber-400/25 bg-amber-500/15 text-amber-300",
-    AGUARDANDO_PECA: "border-green-400/25 bg-green-500/15 text-green-300",
-    ENCAMINHADA_PATIO: "border-cyan-400/25 bg-cyan-500/15 text-cyan-300",
-    ENCAMINHADA_OFICINA: "border-cyan-400/25 bg-cyan-500/15 text-cyan-300",
-    FINALIZADA: "border-green-400/25 bg-green-500/15 text-green-300",
+    ALERTA_GERADO: "border-red-400/30 bg-red-500/15 text-red-300",
+    MONITORAMENTO: "border-amber-400/25 bg-amber-500/15 text-amber-300",
+    RESOLVIDA: "border-green-400/25 bg-green-500/15 text-green-300",
     CANCELADA: "border-slate-400/25 bg-slate-500/15 text-slate-300"
   };
   return tones[status];
 }
 
-function prettyType(type: string) {
-  return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase().replaceAll("_", " ");
-}
-
 function formatShortTime(value: string) {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+}
+
+function formatOccurrenceTimestamp(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  })
+    .format(new Date(value))
+    .replace(",", " às");
+}
+
+function formatRelativeMinutes(value: string) {
+  return Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60000));
 }
 
 function isToday(value: string) {

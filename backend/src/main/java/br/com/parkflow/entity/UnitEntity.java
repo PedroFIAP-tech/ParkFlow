@@ -1,6 +1,6 @@
 package br.com.parkflow.entity;
 
-import br.com.parkflow.enums.YardType;
+import br.com.parkflow.enums.UnitType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -8,15 +8,18 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "yards")
-public class YardEntity extends BaseEntity {
+@Table(name = "units")
+public class UnitEntity extends BaseEntity {
 
     @Column(nullable = false, length = 140)
     private String name;
 
+    @Column(nullable = false, unique = true, length = 40)
+    private String code;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
-    private YardType type;
+    private UnitType type;
 
     @Column(length = 140)
     private String contactName;
@@ -27,6 +30,9 @@ public class YardEntity extends BaseEntity {
     @Column(length = 240)
     private String address;
 
+    @Column(length = 120)
+    private String city;
+
     public String getName() {
         return name;
     }
@@ -35,11 +41,19 @@ public class YardEntity extends BaseEntity {
         this.name = name;
     }
 
-    public YardType getType() {
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public UnitType getType() {
         return type;
     }
 
-    public void setType(YardType type) {
+    public void setType(UnitType type) {
         this.type = type;
     }
 
@@ -66,5 +80,12 @@ public class YardEntity extends BaseEntity {
     public void setAddress(String address) {
         this.address = address;
     }
-}
 
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+}

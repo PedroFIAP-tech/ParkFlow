@@ -5,10 +5,10 @@ import { Camera, FileImage, UploadCloud, X } from "lucide-react";
 import { useState } from "react";
 
 export function UploadDropzone() {
-  const [files, setFiles] = useState<string[]>(["frontal-dano.jpg", "lateral-direita.jpg"]);
+  const [files, setFiles] = useState<string[]>(["entrada-placa.jpg", "cancela-noite.jpg"]);
 
   function addFakeFile() {
-    setFiles((current) => [...current, `vistoria-${current.length + 1}.jpg`]);
+    setFiles((current) => [...current, `evidencia-${current.length + 1}.jpg`]);
   }
 
   function removeFile(file: string) {
@@ -25,7 +25,7 @@ export function UploadDropzone() {
         <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-electric/30 bg-electric/10 transition group-hover:scale-105">
           <UploadCloud className="h-6 w-6 text-electric" />
         </div>
-        <p className="mt-4 text-sm font-semibold text-white">Adicionar fotos da ocorrencia</p>
+        <p className="mt-4 text-sm font-semibold text-white">Adicionar evidencias da ocorrencia</p>
         <p className="mt-1 text-xs leading-5 text-slate-400">Clique para simular upload. Depois conectamos ao Cloudinary.</p>
       </button>
 
@@ -44,7 +44,7 @@ export function UploadDropzone() {
               </div>
               <div>
                 <p className="text-sm font-medium text-white">{file}</p>
-                <p className="text-xs text-slate-500">Pronto para analise visual</p>
+                <p className="text-xs text-slate-500">Pronto para analise de evidencia</p>
               </div>
             </div>
             <button
@@ -60,4 +60,3 @@ export function UploadDropzone() {
     </div>
   );
 }
-

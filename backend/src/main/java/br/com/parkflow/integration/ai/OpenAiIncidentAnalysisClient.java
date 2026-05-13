@@ -16,12 +16,12 @@ public class OpenAiIncidentAnalysisClient {
 
     private AIIncidentAnalysisResult offlineAnalysis(OccurrenceEntity occurrence, List<OccurrencePhotoEntity> photos) {
         var severity = photos.isEmpty() ? Priority.MEDIA : occurrence.getPriority();
-        var summary = "Preview operacional local: ocorrencia " + occurrence.getOccurrenceCode()
+        var summary = "Preview de seguranca local: ocorrencia " + occurrence.getOccurrenceCode()
             + " para placa " + occurrence.getVehicle().getPlate()
-            + ". A IA real do ParkFlow esta integrada pelos workflows n8n no frontend.";
+            + ". A IA real do ParkFlow esta integrada pelos workflows n8n para leitura de placa e evidencia.";
         var nextStep = photos.isEmpty()
-            ? "Selecionar uma imagem no frontend para executar IA/OCR via n8n."
-            : "Usar o fluxo n8n do frontend para analise real da imagem.";
+            ? "Selecionar uma imagem no frontend para executar analise de evidencia via n8n."
+            : "Usar o fluxo n8n do frontend para analise real da imagem, placa e risco operacional.";
         return AIIncidentAnalysisResult.offline(severity, summary, nextStep);
     }
 }

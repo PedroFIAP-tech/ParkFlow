@@ -39,7 +39,7 @@ public class VehicleService {
     public VehicleResponse findByPlate(String plate) {
         return vehicleRepository.findByPlateIgnoreCase(normalizePlate(plate))
             .map(mapper::toVehicleResponse)
-            .orElseThrow(() -> new ResourceNotFoundException("Veiculo nao encontrado."));
+            .orElseThrow(() -> new ResourceNotFoundException("Placa nao encontrada na base interna."));
     }
 
     private VehicleEntity updateVehicle(VehicleEntity vehicle, VehicleRequest request, String plate) {
@@ -61,4 +61,3 @@ public class VehicleService {
         return value == null || value.isBlank() ? null : value.trim();
     }
 }
-

@@ -15,7 +15,7 @@
     <artifactId>parkflow-api</artifactId>
     <version>0.1.0</version>
     <name>ParkFlow API</name>
-    <description>API operacional para gestao inteligente de ocorrencias veiculares.</description>
+    <description>API privada para seguranca operacional de estacionamentos com IA.</description>
 
     <properties>
         <java.version>21</java.version>
@@ -104,4 +104,3 @@
         </plugins>
     </build>
 </project>
-

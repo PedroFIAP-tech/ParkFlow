@@ -30,8 +30,8 @@ public class OccurrenceEntity extends BaseEntity {
     private UserEntity assignedTo;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "yard_id")
-    private YardEntity yard;
+    @JoinColumn(name = "unit_id")
+    private UnitEntity unit;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 60)
@@ -81,12 +81,12 @@ public class OccurrenceEntity extends BaseEntity {
         this.assignedTo = assignedTo;
     }
 
-    public YardEntity getYard() {
-        return yard;
+    public UnitEntity getUnit() {
+        return unit;
     }
 
-    public void setYard(YardEntity yard) {
-        this.yard = yard;
+    public void setUnit(UnitEntity unit) {
+        this.unit = unit;
     }
 
     public OccurrenceType getType() {
@@ -145,4 +145,3 @@ public class OccurrenceEntity extends BaseEntity {
         this.stoppedSince = stoppedSince;
     }
 }
-

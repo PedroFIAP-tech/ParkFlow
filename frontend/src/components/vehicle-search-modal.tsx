@@ -1,11 +1,12 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Car, Search, X } from "lucide-react";
+import { AlertTriangle, Car, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
+import { typeLabel } from "@/lib/occurrence-store";
 import type { OccurrenceDetail } from "@/types/parkflow";
 
 export function VehicleSearchModal({
@@ -53,8 +54,8 @@ export function VehicleSearchModal({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Busca operacional</p>
-                <h2 className="mt-1 text-2xl font-semibold text-white">Buscar veiculo</h2>
-                <p className="mt-2 text-sm text-slate-400">Pesquise por placa, ID, chassi, tipo ou local.</p>
+                <h2 className="mt-1 text-2xl font-semibold text-white">Consultar placa</h2>
+                <p className="mt-2 text-sm text-slate-400">Pesquise placa, ID, tipo, unidade ou local e veja historico interno.</p>
               </div>
               <button type="button" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-slate-400 transition hover:text-white">
                 <X className="h-4 w-4" />
@@ -67,7 +68,7 @@ export function VehicleSearchModal({
                 value={term}
                 onChange={(event) => setTerm(event.target.value)}
                 autoFocus
-                placeholder="ABC1D23, PF-2026, chassi ou Patio Norte"
+                placeholder="ABC1D23, PF-2026 ou Unidade Paulista"
                 className="h-full w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
               />
             </div>
@@ -85,7 +86,13 @@ export function VehicleSearchModal({
                       <div>
                         <p className="font-mono text-sm text-electric">{occurrence.occurrenceCode}</p>
                         <h3 className="mt-1 text-lg font-semibold text-white">{occurrence.vehicle.plate}</h3>
-                        <p className="mt-1 text-sm text-slate-400">{occurrence.vehicle.brand} {occurrence.vehicle.model} - {occurrence.location}</p>
+                        <p className="mt-1 text-sm text-slate-400">{typeLabel(occurrence.type)} - {occurrence.location}</p>
+                        {occurrence.alerts.length ? (
+                          <p className="mt-2 flex items-center gap-2 text-xs text-danger">
+                            <AlertTriangle className="h-3.5 w-3.5" />
+                            {occurrence.alerts[0].message}
+                          </p>
+                        ) : null}
                       </div>
                       <StatusBadge status={occurrence.status} />
                     </div>
@@ -94,8 +101,8 @@ export function VehicleSearchModal({
               ) : (
                 <EmptyState
                   icon={Car}
-                  title="Nenhum veiculo encontrado"
-                  description="Tente outra placa, codigo da ocorrencia, chassi, tipo ou local para refinar a busca."
+                  title="Nenhuma placa encontrada"
+                  description="Tente outra placa, codigo da ocorrencia, tipo ou unidade para refinar a busca."
                 />
               )}
             </div>

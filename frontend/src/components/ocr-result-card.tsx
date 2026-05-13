@@ -18,7 +18,7 @@ export function OCRResultCard({
   if (status === "idle") {
     return (
       <div className="rounded-xl border border-line bg-black/20 p-3 text-sm text-slate-500">
-        OCR disponivel para placa, texto extraido, modelo e documento quando houver imagem selecionada.
+        Leitura de placa disponivel quando houver imagem selecionada.
       </div>
     );
   }
@@ -32,7 +32,7 @@ export function OCRResultCard({
       >
         <p className="flex items-center gap-2 text-sm font-semibold text-blue-100">
           <Loader2 className="h-4 w-4 animate-spin text-electric" />
-          Executando OCR...
+          Lendo placa na imagem...
         </p>
         <div className="mt-4 space-y-2">
           <SkeletonBlock className="h-4 w-full" />
@@ -49,7 +49,7 @@ export function OCRResultCard({
         animate={{ opacity: 1, y: 0 }}
         className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-red-100"
       >
-        <p className="font-semibold text-danger">OCR indisponivel</p>
+        <p className="font-semibold text-danger">Leitura indisponivel</p>
         <p className="mt-1 text-slate-300">{message ?? "Nao foi possivel ler a imagem."}</p>
       </motion.div>
     );
@@ -71,7 +71,7 @@ export function OCRResultCard({
           <FileScan className="h-5 w-5 text-electric" />
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">OCR n8n</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Leitura n8n</p>
           <h3 className="font-semibold text-white">Leitura concluida</h3>
         </div>
       </div>
@@ -79,12 +79,12 @@ export function OCRResultCard({
       <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
         <Info label="Placa" value={result.plate} icon={ScanLine} />
         <Info label="Confianca" value={`${result.confidence}%`} icon={Gauge} />
-        <Info label="Modelo" value={result.model} icon={FileScan} />
-        <Info label="Documento" value={result.document} icon={FileScan} />
+        <Info label="Veículo" value={result.model} icon={FileScan} />
+        <Info label="Origem" value={result.document} icon={FileScan} />
       </div>
 
       <div className="mt-3 rounded-xl border border-line bg-black/20 p-3 text-sm leading-6 text-slate-300">
-        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Texto extraido</p>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Leitura extraida</p>
         {result.extractedText}
       </div>
     </motion.div>

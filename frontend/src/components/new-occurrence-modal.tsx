@@ -1,8 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Car, MapPin, ShieldAlert, Sparkles, X } from "lucide-react";
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { AlertTriangle, Camera, Car, MapPin, ShieldAlert, Sparkles, X } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { AIAnalysisResultCard } from "@/components/ai-analysis-result-card";
 import { PremiumButton } from "@/components/design-system";
 import { OCRResultCard } from "@/components/ocr-result-card";
@@ -13,12 +13,12 @@ import {
   type ParkFlowAIResult,
   type ParkFlowOCRResult
 } from "@/lib/ai-analysis";
-import type { NewOccurrenceInput } from "@/lib/occurrence-store";
-import type { Priority } from "@/types/parkflow";
+import { getPlateHistory, typeLabel, type NewOccurrenceInput } from "@/lib/occurrence-store";
+import type { OccurrenceDetail, Priority } from "@/types/parkflow";
 
 const emptyForm = {
   plate: "",
-  type: "COLISAO",
+  type: "PLACA_SUSPEITA",
   location: "",
   priority: "MEDIA" as Priority,
   description: ""
@@ -28,16 +28,18 @@ export function NewOccurrenceModal({
   open,
   onClose,
   onCreate,
+  occurrences = [],
   onError
 }: {
   open: boolean;
   onClose: () => void;
   onCreate: (input: NewOccurrenceInput) => void;
+  occurrences?: OccurrenceDetail[];
   onError?: (message: string) => void;
 }) {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
-  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [aiStatus, setAiStatus] = useState<AIAnalysisStatus>("idle");
   const [aiResult, setAiResult] = useState<ParkFlowAIResult | null>(null);
@@ -50,7 +52,7 @@ export function NewOccurrenceModal({
     if (open) {
       setForm(emptyForm);
       setError("");
-      setPhotoUrl("");
+      setPhotoUrls([]);
       setImageFile(null);
       setAiStatus("idle");
       setAiResult(null);
@@ -60,6 +62,9 @@ export function NewOccurrenceModal({
       setOcrError("");
     }
   }, [open]);
+
+  const plateHistory = useMemo(() => getPlateHistory(occurrences, form.plate), [form.plate, occurrences]);
+  const previousOccurrence = plateHistory[0];
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -71,23 +76,30 @@ export function NewOccurrenceModal({
   }
 
   function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) {
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length) {
       return;
     }
 
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPhotoUrl(String(reader.result));
+    setImageFile(files[0]);
+    Promise.all(
+      files.map(
+        (file) =>
+          new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.readAsDataURL(file);
+          })
+      )
+    ).then((urls) => {
+      setPhotoUrls((current) => [...current, ...urls]);
       setAiStatus("idle");
       setAiResult(null);
       setAiError("");
       setOcrStatus("idle");
       setOcrResult(null);
       setOcrError("");
-    };
-    reader.readAsDataURL(file);
+    });
   }
 
   async function analyzeWithAI() {
@@ -100,15 +112,6 @@ export function NewOccurrenceModal({
       return;
     }
 
-    if (!form.plate.trim() || !form.description.trim()) {
-      const message = "Informe placa e descricao antes de acionar a IA.";
-      setError(message);
-      setAiStatus("error");
-      setAiError(message);
-      onError?.(message);
-      return;
-    }
-
     setAiStatus("loading");
     setAiResult(null);
 
@@ -116,7 +119,7 @@ export function NewOccurrenceModal({
       const result = await requestParkFlowAI({
         occurrenceId: `draft-${Date.now()}`,
         plate: form.plate,
-        description: form.description,
+        description: form.description || "Analise auxiliar de evidencia de seguranca operacional.",
         image: imageFile
       });
       setAiResult(result);
@@ -135,7 +138,7 @@ export function NewOccurrenceModal({
 
     if (!imageFile) {
       setOcrStatus("error");
-      setOcrError("Selecione uma imagem antes de executar OCR.");
+      setOcrError("Selecione uma imagem antes de ler a placa.");
       return;
     }
 
@@ -153,7 +156,7 @@ export function NewOccurrenceModal({
         update("plate", result.plate);
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Nao foi possivel executar OCR.";
+      const message = err instanceof Error ? err.message : "Nao foi possivel ler a placa.";
       setOcrStatus("error");
       setOcrError(message);
       onError?.(message);
@@ -163,14 +166,14 @@ export function NewOccurrenceModal({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!form.plate.trim() || !form.location.trim() || !form.description.trim()) {
-      setError("Preencha placa, local e descricao para abrir a ocorrencia.");
+      setError("Preencha placa, unidade/local e descricao para abrir a ocorrencia.");
       return;
     }
-    onCreate({ ...form, photoUrl, aiResult });
+    onCreate({ ...form, photoUrl: photoUrls[0], photoUrls, aiResult });
     onClose();
   }
 
-  const previewUrl = photoUrl;
+  const previewUrl = photoUrls[0];
   const canAnalyzeImage = Boolean(imageFile);
 
   return (
@@ -195,9 +198,9 @@ export function NewOccurrenceModal({
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Fluxo rapido</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Fluxo de seguranca</p>
                 <h2 className="mt-1 text-2xl font-semibold text-white">Nova ocorrencia</h2>
-                <p className="mt-2 text-sm text-slate-400">Registre o essencial para colocar o caso na fila operacional.</p>
+                <p className="mt-2 text-sm text-slate-400">Fluxo critico para incidente: risco, evidencias, alerta e timeline operacional.</p>
               </div>
               <button type="button" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-slate-400 transition hover:text-white">
                 <X className="h-4 w-4" />
@@ -221,28 +224,34 @@ export function NewOccurrenceModal({
                 <label className="block">
                   <span className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
                     <MapPin className="h-4 w-4 text-electric" />
-                    Local *
+                    Unidade / local *
                   </span>
                   <input
                     value={form.location}
                     onChange={(event) => update("location", event.target.value)}
                     className="h-12 w-full rounded-lg border border-line bg-black/25 px-3 text-white outline-none focus:border-electric/60 focus:ring-2 focus:ring-electric/25"
-                    placeholder="Unidade, patio ou endereco"
+                    placeholder="Unidade, setor, cancela ou endereco"
                   />
                 </label>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
                     <span className="mb-2 text-sm font-medium text-slate-300">Tipo</span>
                     <select value={form.type} onChange={(event) => update("type", event.target.value)} className="h-12 w-full rounded-lg border border-line bg-black/25 px-3 text-white outline-none focus:border-electric/60 focus:ring-2 focus:ring-electric/25">
-                      <option>COLISAO</option>
-                      <option>AVARIA</option>
-                      <option>PANE</option>
-                      <option>ROUBO</option>
-                      <option>DOCUMENTACAO</option>
+                      <option value="PLACA_SUSPEITA">Placa suspeita</option>
+                      <option value="ACESSO_NAO_AUTORIZADO">Acesso nao autorizado</option>
+                      <option value="CONDUTA_SUSPEITA">Conduta suspeita</option>
+                      <option value="INVASAO">Invasao</option>
+                      <option value="COLISAO">Colisao</option>
+                      <option value="VANDALISMO">Vandalismo</option>
+                      <option value="DESACORDO_OPERACIONAL">Desacordo operacional</option>
+                      <option value="EVASAO">Evasao</option>
+                      <option value="FURTO_ROUBO">Furto/roubo</option>
+                      <option value="DANO_PATRIMONIAL">Dano patrimonial</option>
+                      <option value="OUTROS">Outros</option>
                     </select>
                   </label>
                   <label className="block">
-                    <span className="mb-2 text-sm font-medium text-slate-300">Prioridade</span>
+                    <span className="mb-2 text-sm font-medium text-slate-300">Nivel de risco</span>
                     <select value={form.priority} onChange={(event) => update("priority", event.target.value as Priority)} className="h-12 w-full rounded-lg border border-line bg-black/25 px-3 text-white outline-none focus:border-electric/60 focus:ring-2 focus:ring-electric/25">
                       <option>BAIXA</option>
                       <option>MEDIA</option>
@@ -260,13 +269,29 @@ export function NewOccurrenceModal({
                     placeholder="Resumo objetivo para a operacao"
                   />
                 </label>
+                {previousOccurrence ? (
+                  <div className="rounded-xl border border-danger/35 bg-danger/10 p-4 text-sm leading-6 text-red-50">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
+                      <div>
+                        <p className="font-semibold text-danger">Atenção: veículo com histórico de suspeita registrado anteriormente.</p>
+                        <p className="mt-2 text-slate-300">
+                          Unidade anterior: <span className="text-white">{previousOccurrence.location}</span> - Data:{" "}
+                          <span className="text-white">{formatDate(previousOccurrence.reportedAt)}</span> - Tipo:{" "}
+                          <span className="text-white">{typeLabel(previousOccurrence.type)}</span> - Risco:{" "}
+                          <span className="text-white">{previousOccurrence.priority}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
                 {error ? <p className="rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger">{error}</p> : null}
               </div>
 
               <div>
                 <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-300">
                   <ShieldAlert className="h-4 w-4 text-warning" />
-                  Foto e IA
+                  Evidencias e IA
                 </div>
                 <label className="flex min-h-44 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-electric/35 bg-brand/10 p-4 text-center transition hover:bg-brand/15">
                   {previewUrl ? (
@@ -275,12 +300,20 @@ export function NewOccurrenceModal({
                   ) : (
                     <>
                       <Camera className="h-8 w-8 text-electric" />
-                      <p className="mt-3 text-sm font-semibold text-white">Anexar foto</p>
-                      <p className="mt-1 text-xs text-slate-400">Aceita imagem e gera preview.</p>
+                      <p className="mt-3 text-sm font-semibold text-white">Anexar evidencias</p>
+                      <p className="mt-1 text-xs text-slate-400">Múltiplas imagens. A ocorrencia pode ser salva sem IA.</p>
                     </>
                   )}
-                  <input type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
+                  <input type="file" accept="image/*" multiple onChange={handlePhoto} className="hidden" />
                 </label>
+                {photoUrls.length > 1 ? (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {photoUrls.slice(1, 7).map((url, index) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={`${url}-${index}`} src={url} alt={`Evidencia ${index + 2}`} className="h-16 rounded-lg border border-line object-cover" />
+                    ))}
+                  </div>
+                ) : null}
 
                 <PremiumButton
                   type="button"
@@ -305,7 +338,7 @@ export function NewOccurrenceModal({
                   className="mt-3 w-full disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <ShieldAlert className="h-4 w-4" />
-                  {ocrStatus === "loading" ? "Executando OCR..." : "Ler placa / OCR"}
+                  {ocrStatus === "loading" ? "Lendo placa..." : "Ler placa da imagem"}
                 </PremiumButton>
 
                 <div className="mt-3">
@@ -316,11 +349,15 @@ export function NewOccurrenceModal({
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <PremiumButton type="button" variant="secondary" onClick={onClose}>Cancelar</PremiumButton>
-              <PremiumButton type="submit" variant="primary">Abrir ocorrencia</PremiumButton>
+              <PremiumButton type="submit" variant="primary">Abrir incidente</PremiumButton>
             </div>
           </motion.form>
         </motion.div>
       ) : null}
     </AnimatePresence>
   );
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }

@@ -2,15 +2,14 @@
 
 import {
   ArrowLeft,
+  AlertTriangle,
   Camera,
-  ClipboardCheck,
   FileText,
   FileUp,
   MapPin,
-  Route,
+  Radar,
   Send,
-  TimerReset,
-  Wrench
+  TimerReset
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -30,15 +29,16 @@ import {
   loadOccurrences,
   saveOccurrences,
   setOccurrenceStatus,
-  statusLabel
+  statusLabel,
+  typeLabel
 } from "@/lib/occurrence-store";
 import type { OccurrenceDetail, OccurrenceStatus, TimelineEvent } from "@/types/parkflow";
 
 const statusActions: Array<{ label: string; status: OccurrenceStatus; icon: LucideIcon }> = [
-  { label: "Aguardar documento", status: "AGUARDANDO_DOCUMENTO", icon: FileText },
-  { label: "Enviar para patio", status: "ENCAMINHADA_PATIO", icon: Route },
-  { label: "Enviar oficina", status: "ENCAMINHADA_OFICINA", icon: Wrench },
-  { label: "Finalizar", status: "FINALIZADA", icon: ClipboardCheck }
+  { label: "Gerar alerta", status: "ALERTA_GERADO", icon: AlertTriangle },
+  { label: "Em analise", status: "EM_ANALISE", icon: FileText },
+  { label: "Monitorar placa", status: "MONITORAMENTO", icon: Radar },
+  { label: "Resolver", status: "RESOLVIDA", icon: Send }
 ];
 
 export default function OccurrenceDetailPage() {
@@ -75,7 +75,7 @@ export default function OccurrenceDetailPage() {
       const image = occurrence.photos[0]?.url ?? "https://res.cloudinary.com/demo/image/upload/c_fill,w_900,h_560,q_auto/sample.jpg";
       commit(addPhotoAndAI(occurrences, occurrence.id, image));
       setLoadingAI(false);
-      showToast({ type: "success", message: "Analise inteligente simulada e timeline atualizada." });
+      showToast({ type: "success", message: "Analise de evidencia simulada e timeline atualizada." });
     }, 1100);
   }
 
@@ -93,7 +93,7 @@ export default function OccurrenceDetailPage() {
       window.setTimeout(() => {
         commit(addPhotoAndAI(occurrences, occurrence.id, String(reader.result)));
         setLoadingAI(false);
-        showToast({ type: "success", message: "Foto adicionada e analisada pela IA em modo demo." });
+        showToast({ type: "success", message: "Evidencia adicionada e analisada pela IA em modo demo." });
       }, 1000);
     };
     reader.readAsDataURL(file);
@@ -113,19 +113,19 @@ export default function OccurrenceDetailPage() {
           {
             id: `doc-${crypto.randomUUID()}`,
             url: "#",
-            originalFilename: `documento-${item.documents.length + 1}.pdf`
+            originalFilename: `relatorio-${item.documents.length + 1}.pdf`
           },
           ...item.documents
         ],
         timeline: [
-          buildEvent("DOCUMENTO_ADICIONADO", "Documento adicionado", "Arquivo operacional anexado ao caso.", "Voce"),
+          buildEvent("DOCUMENTO_ADICIONADO", "Relatorio adicionado", "Arquivo operacional anexado ao caso.", "Voce"),
           ...item.timeline
         ],
         updatedAt: new Date().toISOString()
       };
     });
     commit(next);
-    showToast({ type: "success", message: "Documento simulado anexado ao caso." });
+    showToast({ type: "success", message: "Relatorio simulado anexado ao caso." });
   }
 
   function startInspection() {
@@ -134,9 +134,9 @@ export default function OccurrenceDetailPage() {
     }
     commit(applyInspection(occurrences, {
       occurrenceId: occurrence.id,
-      observation: "Vistoria iniciada a partir do detalhe da ocorrencia."
+      observation: "Evidencia registrada a partir do detalhe da ocorrencia."
     }));
-    showToast({ type: "success", message: "Vistoria iniciada e status movido para EM_ANALISE." });
+    showToast({ type: "success", message: "Evidencia registrada e status movido para EM_ANALISE." });
   }
 
   function changeStatus(status: OccurrenceStatus) {
@@ -185,7 +185,7 @@ export default function OccurrenceDetailPage() {
             </div>
             <h1 className="mt-3 text-4xl font-semibold text-white">{occurrence.vehicle.plate}</h1>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-400">
-              <span>{occurrence.type}</span>
+              <span>{typeLabel(occurrence.type)}</span>
               <span>{occurrence.vehicle.brand} {occurrence.vehicle.model}</span>
               <span className="inline-flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
@@ -193,7 +193,7 @@ export default function OccurrenceDetailPage() {
               </span>
               <span className="inline-flex items-center gap-1">
                 <TimerReset className="h-4 w-4 text-warning" />
-                {occurrence.stoppedMinutes} min parado
+                {occurrence.stoppedMinutes} min em aberto
               </span>
             </div>
             <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-400">{occurrence.description}</p>
@@ -202,36 +202,54 @@ export default function OccurrenceDetailPage() {
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
             <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line bg-slate-950/50 px-4 text-sm font-semibold text-slate-100 transition hover:border-electric/45 hover:bg-slate-900/80">
               <Camera className="h-4 w-4" />
-              Adicionar foto
+              Adicionar evidencia
               <input type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
             </label>
             <PremiumButton variant="secondary" onClick={addDocument}>
               <FileUp className="h-4 w-4" />
-              Documento
+              Relatorio
             </PremiumButton>
             <PremiumButton variant="secondary" onClick={startInspection}>
-              <ClipboardCheck className="h-4 w-4" />
-              Vistoria
+              <FileText className="h-4 w-4" />
+              Evidencia
             </PremiumButton>
-            <PremiumButton variant="primary" onClick={() => changeStatus("ENCAMINHADA_OFICINA")}>
+            <PremiumButton variant="primary" onClick={() => changeStatus("MONITORAMENTO")}>
               <Send className="h-4 w-4" />
-              Oficina
+              Monitorar
             </PremiumButton>
           </div>
         </div>
       </header>
 
+      {occurrence.alerts.length ? (
+        <section className="mt-6 rounded-2xl border border-danger/35 bg-danger/10 p-5 text-red-50">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-danger" />
+            <div>
+              <h2 className="text-lg font-semibold text-danger">{occurrence.alerts[0].title}</h2>
+              <p className="mt-2 text-sm leading-6">{occurrence.alerts[0].message}</p>
+              <p className="mt-3 text-sm text-slate-300">
+                Unidade anterior: <span className="text-white">{occurrence.alerts[0].previousUnit}</span> - Data:{" "}
+                <span className="text-white">{formatDate(occurrence.alerts[0].previousDate)}</span> - Tipo:{" "}
+                <span className="text-white">{typeLabel(occurrence.alerts[0].previousType)}</span> - Nivel de risco:{" "}
+                <span className="text-white">{occurrence.alerts[0].riskLevel}</span>
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_390px]">
         <div className="space-y-6">
           <PremiumCard className="p-5">
-            <SectionTitle eyebrow="Evidencias" title="Fotos e documentos" />
+            <SectionTitle eyebrow="Evidencias" title="Imagens e relatorios" />
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {occurrence.photos.map((photo) => (
                 <div key={photo.id} className="overflow-hidden rounded-xl border border-line bg-black/30">
                   <Image
                     src={photo.url}
-                    alt={photo.originalFilename ?? "Foto da ocorrencia"}
+                    alt={photo.originalFilename ?? "Evidencia da ocorrencia"}
                     width={900}
                     height={560}
                     unoptimized
@@ -239,14 +257,14 @@ export default function OccurrenceDetailPage() {
                   />
                   <div className="flex items-center justify-between p-3 text-sm text-slate-300">
                     <span>{photo.originalFilename}</span>
-                    <span className="rounded-md border border-brand/25 bg-brand/10 px-2 py-1 text-xs text-electric">IA ready</span>
+                    <span className="rounded-md border border-brand/25 bg-brand/10 px-2 py-1 text-xs text-electric">IA auxiliar</span>
                   </div>
                 </div>
               ))}
               <div className="flex min-h-64 flex-col justify-center rounded-xl border border-dashed border-line bg-black/20 p-5 text-sm text-slate-400">
                 <FileText className="mb-3 h-8 w-8 text-electric" />
-                <strong className="text-white">{occurrence.documents.length} documento(s)</strong>
-                <span className="mt-1">Clique em Documento para anexar outro arquivo simulado.</span>
+                <strong className="text-white">{occurrence.documents.length} relatorio(s)</strong>
+                <span className="mt-1">Clique em Relatorio para anexar outro arquivo simulado.</span>
               </div>
             </div>
           </PremiumCard>
@@ -286,4 +304,8 @@ function buildEvent(eventType: string, title: string, description: string, creat
     createdBy,
     createdAt: new Date().toISOString()
   };
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }

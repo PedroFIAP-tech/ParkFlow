@@ -52,11 +52,11 @@ export function InspectionModal({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!occurrenceId) {
-      setError("Selecione uma ocorrencia para abrir a vistoria.");
+      setError("Selecione uma ocorrencia para registrar a evidencia.");
       return;
     }
     if (!observation.trim()) {
-      setError("Adicione uma observacao objetiva para a vistoria.");
+      setError("Adicione uma observacao objetiva para a evidencia.");
       return;
     }
     onCreate({ occurrenceId, observation, photoUrl });
@@ -67,7 +67,7 @@ export function InspectionModal({
     <AnimatePresence>
       {open ? (
         <motion.div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center">
-          <button aria-label="Fechar vistoria" className="absolute inset-0 cursor-default" onClick={onClose} />
+          <button aria-label="Fechar evidencia" className="absolute inset-0 cursor-default" onClick={onClose} />
           <motion.form
             onSubmit={submit}
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
@@ -78,9 +78,9 @@ export function InspectionModal({
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Fluxo de campo</p>
-                <h2 className="mt-1 text-2xl font-semibold text-white">Nova vistoria</h2>
-                <p className="mt-2 text-sm text-slate-400">Abra uma vistoria simulada e mova a ocorrencia para analise.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Fluxo de evidencia</p>
+                <h2 className="mt-1 text-2xl font-semibold text-white">Nova evidencia</h2>
+                <p className="mt-2 text-sm text-slate-400">Registre uma evidencia auxiliar e mova a ocorrencia para analise.</p>
               </div>
               <button type="button" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-slate-400 transition hover:text-white">
                 <X className="h-4 w-4" />
@@ -103,22 +103,22 @@ export function InspectionModal({
               </label>
 
               <label className="block">
-                <span className="mb-2 text-sm font-medium text-slate-300">Observacao da vistoria</span>
+                <span className="mb-2 text-sm font-medium text-slate-300">Observacao da evidencia</span>
                 <textarea
                   value={observation}
                   onChange={(event) => setObservation(event.target.value)}
                   className="min-h-28 w-full resize-none rounded-lg border border-line bg-black/25 p-3 text-white outline-none focus:border-electric/60 focus:ring-2 focus:ring-electric/25"
-                  placeholder="Ex.: vistoria iniciada, fotos laterais anexadas, aguardar avaliacao tecnica."
+                  placeholder="Ex.: imagem da cancela anexada, placa visivel, aguardar decisao do supervisor."
                 />
               </label>
 
               <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-electric/35 bg-brand/10 p-4 text-center transition hover:bg-brand/15">
                 {photoUrl ? (
-                  <Image src={photoUrl} alt="Preview da vistoria" width={640} height={300} unoptimized className="h-40 w-full rounded-lg object-cover" />
+                  <Image src={photoUrl} alt="Preview da evidencia" width={640} height={300} unoptimized className="h-40 w-full rounded-lg object-cover" />
                 ) : (
                   <>
                     <Camera className="h-8 w-8 text-electric" />
-                    <p className="mt-3 text-sm font-semibold text-white">Anexar foto simulada</p>
+                    <p className="mt-3 text-sm font-semibold text-white">Anexar imagem</p>
                     <p className="mt-1 text-xs text-slate-400">Opcional, mas atualiza a timeline.</p>
                   </>
                 )}
@@ -136,7 +136,7 @@ export function InspectionModal({
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <PremiumButton type="button" variant="secondary" onClick={onClose}>Cancelar</PremiumButton>
-              <PremiumButton type="submit" variant="primary">Iniciar vistoria</PremiumButton>
+              <PremiumButton type="submit" variant="primary">Registrar evidencia</PremiumButton>
             </div>
           </motion.form>
         </motion.div>

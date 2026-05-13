@@ -1,6 +1,7 @@
 package br.com.parkflow.dto.occurrence;
 
 import br.com.parkflow.dto.ai.AIAnalysisResponse;
+import br.com.parkflow.dto.alert.AlertResponse;
 import br.com.parkflow.dto.vehicle.VehicleResponse;
 import br.com.parkflow.enums.OccurrenceStatus;
 import br.com.parkflow.enums.OccurrenceType;
@@ -24,8 +25,8 @@ public record OccurrenceDetailResponse(
     List<FileResponse> documents,
     List<TimelineResponse> timeline,
     List<AIAnalysisResponse> aiAnalyses,
+    List<AlertResponse> alerts,
     OffsetDateTime reportedAt,
     OffsetDateTime updatedAt
 ) {
 }
-

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AlertTriangle, CheckCircle2, Loader2, ScanLine, Sparkles, Wrench } from "lucide-react";
+import { Car, Loader2, ScanLine, ShieldAlert, Sparkles } from "lucide-react";
 import { PremiumButton, PremiumCard, SkeletonBlock } from "@/components/design-system";
 import { PriorityChip } from "@/components/priority-chip";
 import type { AIAnalysis } from "@/types/parkflow";
@@ -27,7 +27,7 @@ export function AIInsightCard({
         </motion.div>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">ParkFlow AI</p>
-          <h2 className="text-xl font-semibold text-white">Analise inteligente</h2>
+          <h2 className="text-xl font-semibold text-white">Analise de evidencia</h2>
         </div>
       </div>
 
@@ -36,7 +36,7 @@ export function AIInsightCard({
           <div className="rounded-xl border border-brand/20 bg-brand/10 p-4">
             <p className="flex items-center gap-2 text-sm font-semibold text-blue-100">
               <Loader2 className="h-4 w-4 animate-spin" />
-              IA analisando foto, placa e severidade...
+              IA analisando evidencia, placa e risco...
             </p>
             <div className="mt-4 space-y-2">
               <SkeletonBlock className="h-4 w-full" />
@@ -52,11 +52,11 @@ export function AIInsightCard({
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-xl border border-line bg-black/20 p-3">
-              <p className="text-slate-500">Dano detectado</p>
-              <p className="mt-2 text-sm font-semibold text-white">{analysis.damageDetected ?? "Frontal/lateral"}</p>
+              <p className="text-slate-500">Evidencia</p>
+              <p className="mt-2 text-sm font-semibold text-white">{analysis.evidence ?? "Imagem em revisao operacional"}</p>
             </div>
             <div className="rounded-xl border border-line bg-black/20 p-3">
-              <p className="text-slate-500">Gravidade sugerida</p>
+              <p className="text-slate-500">Risco sugerido</p>
               <div className="mt-2">
                 <PriorityChip priority={analysis.severitySuggestion} />
               </div>
@@ -67,11 +67,11 @@ export function AIInsightCard({
             </div>
             <div className="rounded-xl border border-line bg-black/20 p-3">
               <p className="flex items-center gap-2 text-slate-500">
-                <Wrench className="h-4 w-4" />
-                Pecas afetadas
+                <Car className="h-4 w-4" />
+                Tipo de veículo
               </p>
               <p className="mt-2 text-sm font-semibold text-white">
-                {analysis.affectedParts?.length ? analysis.affectedParts.join(", ") : "Parachoque, pintura, suporte"}
+                {analysis.vehicleType ?? "Nao classificado"}
               </p>
             </div>
             <div className="rounded-xl border border-line bg-black/20 p-3">
@@ -83,10 +83,10 @@ export function AIInsightCard({
             </div>
             <div className="rounded-xl border border-line bg-black/20 p-3">
               <p className="flex items-center gap-2 text-slate-500">
-                {analysis.plateDivergence ? <AlertTriangle className="h-4 w-4 text-danger" /> : <CheckCircle2 className="h-4 w-4 text-success" />}
-                Divergencia
+                <ShieldAlert className="h-4 w-4 text-warning" />
+                Risco operacional
               </p>
-              <p className="mt-2 text-lg font-semibold text-white">{analysis.plateDivergence ? "Sim" : "Nao"}</p>
+              <p className="mt-2 text-sm font-semibold text-white">{analysis.operationalRisk ?? (analysis.plateDivergence ? "Placa divergente" : "Sem divergencia")}</p>
             </div>
           </div>
           <div className="rounded-xl border border-line bg-black/20 p-4 text-sm leading-6 text-slate-300">
@@ -96,7 +96,7 @@ export function AIInsightCard({
         </div>
       ) : (
         <div className="mt-5 rounded-xl border border-warning/20 bg-warning/10 p-4 text-sm leading-6 text-warning">
-          Nenhuma analise registrada. Execute a IA quando houver contexto ou fotos suficientes.
+          Nenhuma analise registrada. A IA e auxiliar: cadastre e acompanhe a ocorrencia mesmo sem imagem.
         </div>
       )}
 

@@ -44,7 +44,7 @@ public class DataSeeder implements CommandLineRunner {
 
         if (!userRepository.existsByEmailIgnoreCase(adminEmail)) {
             var admin = new UserEntity();
-            admin.setFullName("Administrador ParkFlow");
+            admin.setFullName("Administrador Smart Parking Security");
             admin.setEmail(adminEmail);
             admin.setPasswordHash(passwordEncoder.encode(adminPassword));
             admin.setRoles(new LinkedHashSet<>(roleRepository.findAll()));
@@ -61,4 +61,3 @@ public class DataSeeder implements CommandLineRunner {
         });
     }
 }
-

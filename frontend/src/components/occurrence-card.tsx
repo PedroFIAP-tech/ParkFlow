@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { PriorityChip } from "@/components/priority-chip";
 import { StatusBadge } from "@/components/status-badge";
+import { typeLabel } from "@/lib/occurrence-store";
 import type { OccurrenceSummary } from "@/types/parkflow";
 
 export function OccurrenceCard({ occurrence, index = 0 }: { occurrence: OccurrenceSummary; index?: number }) {
@@ -27,12 +28,12 @@ export function OccurrenceCard({ occurrence, index = 0 }: { occurrence: Occurren
               <StatusBadge status={occurrence.status} />
             </div>
             <h3 className="mt-3 text-lg font-semibold text-white">
-              {occurrence.vehicle.plate} - {occurrence.vehicle.model ?? occurrence.type}
+              {occurrence.vehicle.plate} - {occurrence.vehicle.model ?? typeLabel(occurrence.type)}
             </h3>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-line bg-black/20 px-3 py-2 text-sm text-slate-300">
             <Clock className="h-4 w-4 text-warning" />
-            {occurrence.stoppedMinutes} min parado
+            {occurrence.stoppedMinutes} min em aberto
           </div>
         </div>
 
@@ -47,6 +48,15 @@ export function OccurrenceCard({ occurrence, index = 0 }: { occurrence: Occurren
           </div>
         </div>
 
+        {occurrence.latestAlert ? (
+          <div className="mt-4 rounded-lg border border-danger/25 bg-danger/10 p-3 text-sm leading-6 text-red-100">
+            <strong className="text-danger">{occurrence.latestAlert.message}</strong>
+            <span className="mt-1 block text-slate-300">
+              Unidade anterior: {occurrence.latestAlert.previousUnit} - Risco: {occurrence.latestAlert.riskLevel}
+            </span>
+          </div>
+        ) : null}
+
         {occurrence.latestAIAnalysis ? (
           <div className="mt-4 rounded-lg border border-brand/20 bg-brand/10 p-3 text-sm leading-6 text-blue-100">
             {occurrence.latestAIAnalysis.summary}
@@ -54,7 +64,7 @@ export function OccurrenceCard({ occurrence, index = 0 }: { occurrence: Occurren
         ) : (
           <div className="mt-4 flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm text-warning">
             <AlertTriangle className="h-4 w-4" />
-            Aguardando analise inteligente.
+            IA auxiliar ainda nao executada.
           </div>
         )}
       </Link>

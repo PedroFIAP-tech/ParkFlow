@@ -1,5 +1,6 @@
 package br.com.parkflow.service;
 
+import br.com.parkflow.entity.AlertEntity;
 import br.com.parkflow.dto.ai.AIAnalysisResponse;
 import br.com.parkflow.dto.occurrence.FileResponse;
 import br.com.parkflow.dto.occurrence.OccurrenceCreateRequest;
@@ -9,6 +10,7 @@ import br.com.parkflow.dto.occurrence.OccurrenceStatusUpdateRequest;
 import br.com.parkflow.dto.occurrence.OccurrenceSummaryResponse;
 import br.com.parkflow.dto.occurrence.TimelineCreateRequest;
 import br.com.parkflow.dto.occurrence.TimelineResponse;
+import br.com.parkflow.enums.AlertType;
 import br.com.parkflow.entity.OccurrenceDocumentEntity;
 import br.com.parkflow.entity.OccurrenceEntity;
 import br.com.parkflow.entity.OccurrencePhotoEntity;
@@ -21,6 +23,7 @@ import br.com.parkflow.exception.ResourceNotFoundException;
 import br.com.parkflow.integration.storage.CloudinaryStorageService;
 import br.com.parkflow.mapper.ParkFlowMapper;
 import br.com.parkflow.repository.AIAnalysisRepository;
+import br.com.parkflow.repository.AlertRepository;
 import br.com.parkflow.repository.OccurrenceDocumentRepository;
 import br.com.parkflow.repository.OccurrencePhotoRepository;
 import br.com.parkflow.repository.OccurrenceRepository;
@@ -43,7 +46,9 @@ public class OccurrenceService {
     private final OccurrencePhotoRepository photoRepository;
     private final OccurrenceDocumentRepository documentRepository;
     private final AIAnalysisRepository aiAnalysisRepository;
+    private final AlertRepository alertRepository;
     private final VehicleService vehicleService;
+    private final UnitService unitService;
     private final UserContextService userContextService;
     private final CloudinaryStorageService storageService;
     private final ParkFlowMapper mapper;
@@ -54,7 +59,9 @@ public class OccurrenceService {
         OccurrencePhotoRepository photoRepository,
         OccurrenceDocumentRepository documentRepository,
         AIAnalysisRepository aiAnalysisRepository,
+        AlertRepository alertRepository,
         VehicleService vehicleService,
+        UnitService unitService,
         UserContextService userContextService,
         CloudinaryStorageService storageService,
         ParkFlowMapper mapper
@@ -64,7 +71,9 @@ public class OccurrenceService {
         this.photoRepository = photoRepository;
         this.documentRepository = documentRepository;
         this.aiAnalysisRepository = aiAnalysisRepository;
+        this.alertRepository = alertRepository;
         this.vehicleService = vehicleService;
+        this.unitService = unitService;
         this.userContextService = userContextService;
         this.storageService = storageService;
         this.mapper = mapper;
@@ -73,19 +82,27 @@ public class OccurrenceService {
     @Transactional
     public OccurrenceDetailResponse create(OccurrenceCreateRequest request) {
         var now = OffsetDateTime.now();
+        var vehicle = vehicleService.findOrCreate(request.vehicle());
+        var previousOccurrence = occurrenceRepository.findFirstByVehicle_IdAndActiveTrueOrderByReportedAtDesc(vehicle.getId()).orElse(null);
         var occurrence = new OccurrenceEntity();
         occurrence.setOccurrenceCode(nextOccurrenceCode());
-        occurrence.setVehicle(vehicleService.findOrCreate(request.vehicle()));
+        occurrence.setVehicle(vehicle);
         occurrence.setType(request.type());
-        occurrence.setStatus(OccurrenceStatus.ABERTA);
+        occurrence.setStatus(previousOccurrence == null ? OccurrenceStatus.ABERTA : OccurrenceStatus.ALERTA_GERADO);
         occurrence.setPriority(request.priority() == null ? Priority.MEDIA : request.priority());
         occurrence.setLocation(request.location().trim());
         occurrence.setDescription(request.description());
+        if (request.unitId() != null) {
+            occurrence.setUnit(unitService.findEntity(request.unitId()));
+        }
         occurrence.setReportedAt(now);
         occurrence.setStoppedSince(now);
 
         var saved = occurrenceRepository.save(occurrence);
-        appendTimeline(saved, TimelineEventType.OCORRENCIA_CRIADA, "Ocorrencia aberta", "Registro criado na central operacional.", null, OccurrenceStatus.ABERTA);
+        appendTimeline(saved, TimelineEventType.OCORRENCIA_CRIADA, "Ocorrencia de seguranca aberta", "Registro criado na central operacional.", null, saved.getStatus());
+        if (previousOccurrence != null) {
+            createPlateHistoryAlert(saved, previousOccurrence);
+        }
         return detail(saved.getId());
     }
 
@@ -107,6 +124,7 @@ public class OccurrenceService {
         var documents = documentRepository.findByOccurrence_IdOrderByCreatedAtDesc(id).stream().map(mapper::toDocumentResponse).toList();
         var timeline = timelineRepository.findByOccurrence_IdOrderByCreatedAtDesc(id).stream().map(mapper::toTimelineResponse).toList();
         var analyses = aiAnalysisRepository.findByOccurrence_IdOrderByCreatedAtDesc(id).stream().map(mapper::toAIAnalysisResponse).toList();
+        var alerts = alertRepository.findByOccurrence_IdOrderByCreatedAtDesc(id).stream().map(mapper::toAlertResponse).toList();
 
         return new OccurrenceDetailResponse(
             occurrence.getId(),
@@ -122,6 +140,7 @@ public class OccurrenceService {
             documents,
             timeline,
             analyses,
+            alerts,
             occurrence.getReportedAt(),
             occurrence.getUpdatedAt()
         );
@@ -178,7 +197,7 @@ public class OccurrenceService {
         photo.setContentType(stored.contentType());
         photo.setSizeBytes(stored.sizeBytes());
         var saved = photoRepository.save(photo);
-        appendTimeline(occurrence, TimelineEventType.FOTO_ADICIONADA, "Foto adicionada", stored.originalFilename(), occurrence.getStatus(), occurrence.getStatus());
+        appendTimeline(occurrence, TimelineEventType.EVIDENCIA_ADICIONADA, "Evidencia adicionada", stored.originalFilename(), occurrence.getStatus(), occurrence.getStatus());
         return mapper.toPhotoResponse(saved);
     }
 
@@ -233,6 +252,10 @@ public class OccurrenceService {
         AIAnalysisResponse latestAI = aiAnalysisRepository.findFirstByOccurrence_IdOrderByCreatedAtDesc(occurrence.getId())
             .map(mapper::toAIAnalysisResponse)
             .orElse(null);
+        var latestAlert = alertRepository.findByOccurrence_IdOrderByCreatedAtDesc(occurrence.getId()).stream()
+            .findFirst()
+            .map(mapper::toAlertResponse)
+            .orElse(null);
 
         return new OccurrenceSummaryResponse(
             occurrence.getId(),
@@ -244,7 +267,35 @@ public class OccurrenceService {
             occurrence.getLocation(),
             stoppedMinutes(occurrence),
             latestAI,
+            latestAlert,
             occurrence.getUpdatedAt()
+        );
+    }
+
+    private void createPlateHistoryAlert(OccurrenceEntity occurrence, OccurrenceEntity previousOccurrence) {
+        var message = "Atenção: veículo com histórico de suspeita registrado anteriormente.";
+        var alert = new AlertEntity();
+        alert.setOccurrence(occurrence);
+        alert.setPreviousOccurrence(previousOccurrence);
+        alert.setVehicle(occurrence.getVehicle());
+        alert.setType(AlertType.PLACA_REINCIDENTE);
+        alert.setTitle("Placa com historico de suspeita");
+        alert.setMessage(message);
+        alert.setPreviousUnit(previousOccurrence.getLocation());
+        alert.setPreviousDate(previousOccurrence.getReportedAt());
+        alert.setPreviousType(previousOccurrence.getType());
+        alert.setRiskLevel(previousOccurrence.getPriority());
+        alertRepository.save(alert);
+
+        appendTimeline(
+            occurrence,
+            TimelineEventType.ALERTA_GERADO,
+            "Alerta automatico de reincidencia",
+            message + " Unidade anterior: " + previousOccurrence.getLocation()
+                + ". Tipo: " + previousOccurrence.getType().name()
+                + ". Risco: " + previousOccurrence.getPriority().name() + ".",
+            occurrence.getStatus(),
+            occurrence.getStatus()
         );
     }
 

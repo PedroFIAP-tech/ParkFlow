@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { motion } from "framer-motion";
-import { BrainCircuit, CheckCircle2, Gauge, Loader2, Sparkles, Wrench } from "lucide-react";
+import { BrainCircuit, Car, CheckCircle2, Gauge, Loader2, ShieldAlert, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SkeletonBlock } from "@/components/design-system";
 import type { AIAnalysisStatus, ParkFlowAIResult } from "@/lib/ai-analysis";
@@ -27,7 +27,7 @@ export function AIAnalysisResultCard({
   if (status === "idle") {
     return (
       <div className="rounded-xl border border-line bg-black/20 p-3 text-sm text-slate-500">
-        Anexe uma foto e clique em Analisar com IA para gerar dano, severidade e proximo passo.
+        Anexe uma evidencia e clique em Analisar com IA para tentar ler placa, veículo, risco e resumo.
       </div>
     );
   }
@@ -45,7 +45,7 @@ export function AIAnalysisResultCard({
           </div>
           <div>
             <p className="text-sm font-semibold text-white">Analisando com IA</p>
-            <p className="text-xs text-slate-400">Lendo imagem, placa e descricao...</p>
+            <p className="text-xs text-slate-400">Lendo imagem, placa, contexto e risco...</p>
           </div>
         </div>
         <div className="mt-4 space-y-2">
@@ -96,7 +96,7 @@ export function AIAnalysisResultCard({
               <Sparkles className="h-3.5 w-3.5 text-electric" />
               ParkFlow AI
             </p>
-            <h3 className="mt-1 font-semibold text-white">Analise inteligente pronta</h3>
+            <h3 className="mt-1 font-semibold text-white">Analise de evidencia pronta</h3>
           </div>
         </div>
         <span className={clsx("rounded-full border px-2.5 py-1 text-xs font-bold", severityTone[result.severity])}>
@@ -105,10 +105,10 @@ export function AIAnalysisResultCard({
       </div>
 
       <div className="relative mt-4 grid gap-3 text-sm sm:grid-cols-2">
-        <InfoTile label="Dano detectado" value={result.damageDetected} icon={CheckCircle2} />
-        <InfoTile label="Tipo de dano" value={result.damageType} icon={BrainCircuit} />
+        <InfoTile label="Placa visivel" value={result.detectedPlate ?? result.plateVisible} icon={CheckCircle2} />
+        <InfoTile label="Tipo de veículo" value={result.vehicleType} icon={Car} />
         <InfoTile label="Confianca" value={`${result.confidence}%`} icon={Gauge} />
-        <InfoTile label="Pecas afetadas" value={result.affectedParts.join(", ")} icon={Wrench} />
+        <InfoTile label="Evidencia relevante" value={result.evidence} icon={ShieldAlert} />
       </div>
 
       <div className="relative mt-3 rounded-xl border border-line bg-black/20 p-3 text-sm leading-6 text-slate-300">
@@ -117,7 +117,8 @@ export function AIAnalysisResultCard({
       </div>
 
       <div className="relative mt-3 rounded-xl border border-brand/25 bg-brand/10 p-3 text-sm leading-6 text-blue-100">
-        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-blue-300">Proximo passo sugerido</p>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-blue-300">Risco e proximo passo</p>
+        <span className="mb-2 block text-white">{result.operationalRisk}</span>
         {result.nextStep}
       </div>
     </motion.div>

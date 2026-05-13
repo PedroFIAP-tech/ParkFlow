@@ -3,10 +3,11 @@ import type { Priority } from "@/types/parkflow";
 export type AIAnalysisStatus = "idle" | "loading" | "success" | "error";
 
 export type ParkFlowAIResult = {
-  damageDetected: string;
-  damageType: string;
+  plateVisible: string;
+  vehicleType: string;
+  evidence: string;
+  operationalRisk: string;
   severity: Priority;
-  affectedParts: string[];
   summary: string;
   nextStep: string;
   confidence: number;
@@ -85,21 +86,26 @@ export function normalizeAIResult(input: unknown): ParkFlowAIResult {
   const raw = unwrapResponse(input);
   const parsed = parseMaybeJson(raw);
 
-  const affected = readStringArray(parsed, ["affectedParts", "pecasAfetadas", "parts", "pecas_afetadas"]);
   const severity = normalizeSeverity(readString(parsed, ["severity", "severidade", "gravidade", "priority"]));
   const confidence = normalizeConfidence(readUnknown(parsed, ["confidence", "confianca", "confidenceScore", "score"]));
 
   return {
-    damageDetected: readString(parsed, ["damageDetected", "danoDetectado", "dano_detectado", "detectedDamage"]) || "Dano visual identificado",
-    damageType: readString(parsed, ["damageType", "tipoDano", "tipo_de_dano", "damage_category"]) || "Avaria externa",
+    plateVisible: readString(parsed, ["plateVisible", "placaVisivel", "placa_visivel", "visiblePlate"]) || "Nao confirmado",
+    vehicleType: readString(parsed, ["vehicleType", "tipoVeiculo", "tipo_veiculo", "model", "modelo"]) || "Veículo nao classificado",
+    evidence:
+      readString(parsed, ["evidence", "evidencia", "relevantEvidence", "evidenciaRelevante"]) ||
+      readString(parsed, ["damageDetected", "danoDetectado", "detectedDamage"]) ||
+      "Evidencia visual pendente de revisao humana",
+    operationalRisk:
+      readString(parsed, ["operationalRisk", "riscoOperacional", "risco_operacional", "risk"]) ||
+      "Risco operacional calculado pela imagem e descricao",
     severity,
-    affectedParts: affected.length ? affected : ["Parachoque", "Pintura", "Suporte"],
     summary:
       readString(parsed, ["summary", "resumo", "analysis", "analise"]) ||
-      "A imagem apresenta sinais de avaria visual. Recomenda-se completar a vistoria antes do encaminhamento.",
+      "A imagem foi analisada como evidencia operacional. Recomenda-se revisar placa, contexto e unidade antes do encerramento.",
     nextStep:
       readString(parsed, ["nextStep", "proximoPasso", "proximo_passo", "suggestedNextStep"]) ||
-      "Iniciar vistoria tecnica, anexar fotos complementares e definir patio ou oficina.",
+      "Validar leitura da placa, registrar decisao operacional e manter a timeline da placa atualizada.",
     confidence,
     detectedPlate: readString(parsed, ["detectedPlate", "placaDetectada", "plate", "placa"]) || undefined
   };
@@ -164,20 +170,6 @@ function readString(input: unknown, keys: string[]) {
     return String(value);
   }
   return "";
-}
-
-function readStringArray(input: unknown, keys: string[]) {
-  const value = readUnknown(input, keys);
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item)).filter(Boolean);
-  }
-  if (typeof value === "string") {
-    return value
-      .split(/[,;|]/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-  return [];
 }
 
 function readUnknown(input: unknown, keys: string[]) {

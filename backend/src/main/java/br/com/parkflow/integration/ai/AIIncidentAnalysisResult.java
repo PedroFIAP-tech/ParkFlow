@@ -10,6 +10,9 @@ public record AIIncidentAnalysisResult(
     BigDecimal confidenceScore,
     Priority severitySuggestion,
     String detectedPlate,
+    String vehicleType,
+    String evidence,
+    String operationalRisk,
     Boolean plateDivergence,
     String summary,
     String nextStep,
@@ -22,6 +25,9 @@ public record AIIncidentAnalysisResult(
             BigDecimal.valueOf(62.00),
             severitySuggestion,
             "",
+            "Nao classificado",
+            "Analise offline sem imagem processada pelo n8n.",
+            "Risco calculado por prioridade e historico interno.",
             false,
             summary,
             nextStep,
@@ -29,4 +35,3 @@ public record AIIncidentAnalysisResult(
         );
     }
 }
-

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ParkFlow",
-  description: "Central operacional inteligente para ocorrencias veiculares"
+  title: "ParkFlow Security AI",
+  description: "Central privada de seguranca operacional para estacionamentos"
 };
 
 export default function RootLayout({
@@ -17,4 +17,3 @@ export default function RootLayout({
     </html>
   );
 }
-

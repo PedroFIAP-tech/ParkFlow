@@ -1,6 +1,7 @@
 package br.com.parkflow.dto.occurrence;
 
 import br.com.parkflow.dto.ai.AIAnalysisResponse;
+import br.com.parkflow.dto.alert.AlertResponse;
 import br.com.parkflow.dto.vehicle.VehicleResponse;
 import br.com.parkflow.enums.OccurrenceStatus;
 import br.com.parkflow.enums.OccurrenceType;
@@ -19,7 +20,7 @@ public record OccurrenceSummaryResponse(
     String location,
     long stoppedMinutes,
     AIAnalysisResponse latestAIAnalysis,
+    AlertResponse latestAlert,
     OffsetDateTime updatedAt
 ) {
 }
-

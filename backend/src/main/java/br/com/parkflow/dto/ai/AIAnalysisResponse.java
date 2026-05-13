@@ -15,6 +15,9 @@ public record AIAnalysisResponse(
     BigDecimal confidenceScore,
     Priority severitySuggestion,
     String detectedPlate,
+    String vehicleType,
+    String evidence,
+    String operationalRisk,
     Boolean plateDivergence,
     String summary,
     String nextStep,
@@ -22,4 +25,3 @@ public record AIAnalysisResponse(
     OffsetDateTime createdAt
 ) {
 }
-

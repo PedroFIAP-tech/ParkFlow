@@ -8,7 +8,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "occurrence_photos")
+@Table(name = "occurrence_images")
 public class OccurrencePhotoEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -88,4 +88,3 @@ public class OccurrencePhotoEntity extends BaseEntity {
         this.aiProcessed = aiProcessed;
     }
 }
-
