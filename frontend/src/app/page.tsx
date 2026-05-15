@@ -426,11 +426,11 @@ export default function Home() {
         onLogout={() => showToast({ type: "info", message: "Sessao demo encerrada." })}
       />
 
-      <div className="mx-auto flex w-full max-w-7xl gap-6 px-3 pb-36 pt-4 min-[380px]:px-4 sm:px-6 lg:pb-8 lg:pt-8">
+      <div className="mx-auto flex w-full max-w-7xl gap-6 px-0 pb-0 pt-0 lg:px-4 lg:pb-8 lg:pt-8">
         <DesktopSidebar onAction={runDrawerAction} />
 
         <section className="min-w-0 flex-1 overflow-hidden">
-          <div className="mx-auto w-full max-w-[430px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.18),transparent_36%),linear-gradient(180deg,#050914_0%,#070b15_100%)] shadow-2xl lg:max-w-[520px] lg:rounded-3xl">
+          <div className="mx-auto min-h-dvh w-full max-w-none overflow-hidden border-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.18),transparent_36%),linear-gradient(180deg,#050914_0%,#070b15_100%)] shadow-none lg:min-h-0 lg:max-w-[520px] lg:rounded-3xl lg:border lg:border-white/10 lg:shadow-2xl">
             <header className="flex items-center justify-between gap-2 px-4 pt-5 min-[380px]:gap-3 sm:px-5 sm:pt-6 lg:px-7">
               <div className="flex min-w-0 items-center gap-2 min-[380px]:gap-3">
                 <button
@@ -478,7 +478,7 @@ export default function Home() {
               </div>
             </header>
 
-            <div className="px-3.5 pb-6 pt-6 min-[380px]:px-4 sm:px-5 lg:px-6">
+            <div className="px-3.5 pb-[calc(7.5rem+env(safe-area-inset-bottom))] pt-6 min-[380px]:px-4 sm:px-5 lg:px-6 lg:pb-6">
               <section className="space-y-2">
                 <h1 className="text-[1.45rem] font-bold leading-tight tracking-normal text-white min-[360px]:text-[1.65rem] sm:text-3xl">
                   Boa noite, Joao! <span aria-hidden="true">👋</span>
