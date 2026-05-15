@@ -19,7 +19,7 @@ import {
   X,
   type LucideIcon
 } from "lucide-react";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AIAnalysisResultCard } from "@/components/ai-analysis-result-card";
 import { PremiumButton } from "@/components/design-system";
@@ -121,7 +121,6 @@ export function NewOccurrenceModal({
 
   const plateHistory = useMemo(() => getPlateHistory(occurrences, form.plate), [form.plate, occurrences]);
   const previousOccurrence = plateHistory[0];
-  const previewUrl = photoUrls[0];
   const canAnalyzeImage = Boolean(imageFile);
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -165,6 +164,18 @@ export function NewOccurrenceModal({
     });
 
     event.target.value = "";
+  }
+
+  async function handleCameraCapture(dataUrl: string) {
+    const file = await dataUrlToFile(dataUrl, `placa-camera-${Date.now()}.jpg`);
+    setImageFile(file);
+    setPhotoUrls((current) => [dataUrl, ...current]);
+    setAiStatus("idle");
+    setAiResult(null);
+    setAiError("");
+    setOcrStatus("idle");
+    setOcrResult(null);
+    setOcrError("");
   }
 
   function validateDataStep() {
@@ -345,7 +356,6 @@ export function NewOccurrenceModal({
 
               {step === 2 ? (
                 <EvidenceStep
-                  previewUrl={previewUrl}
                   photoUrls={photoUrls}
                   canAnalyzeImage={canAnalyzeImage}
                   aiStatus={aiStatus}
@@ -355,6 +365,7 @@ export function NewOccurrenceModal({
                   ocrResult={ocrResult}
                   ocrError={ocrError}
                   onEvidence={handleEvidence}
+                  onCameraCapture={handleCameraCapture}
                   onOCR={runOCR}
                   onAnalyze={analyzeWithAI}
                 />
@@ -375,7 +386,7 @@ export function NewOccurrenceModal({
               {error ? <p className="mb-3 rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger">{error}</p> : null}
               <div className="flex gap-3">
                 {step === 1 ? (
-                  <PremiumButton type="button" variant="primary" onClick={goToEvidence} className="w-full">
+                  <PremiumButton type="button" variant="primary" onClick={goToEvidence} className="hidden w-full sm:inline-flex">
                     Próximo
                   </PremiumButton>
                 ) : null}
@@ -590,7 +601,6 @@ function DataStep({
 }
 
 function EvidenceStep({
-  previewUrl,
   photoUrls,
   canAnalyzeImage,
   aiStatus,
@@ -600,10 +610,10 @@ function EvidenceStep({
   ocrResult,
   ocrError,
   onEvidence,
+  onCameraCapture,
   onOCR,
   onAnalyze
 }: {
-  previewUrl?: string;
   photoUrls: string[];
   canAnalyzeImage: boolean;
   aiStatus: AIAnalysisStatus;
@@ -613,39 +623,122 @@ function EvidenceStep({
   ocrResult: ParkFlowOCRResult | null;
   ocrError: string;
   onEvidence: (event: ChangeEvent<HTMLInputElement>) => void;
+  onCameraCapture: (dataUrl: string) => void | Promise<void>;
   onOCR: () => void;
   onAnalyze: () => void;
 }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [cameraStatus, setCameraStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [cameraError, setCameraError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function startCamera() {
+      setCameraStatus("loading");
+      setCameraError("");
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraStatus("error");
+        setCameraError("Câmera indisponível neste navegador. Use fotos da galeria.");
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false
+        });
+
+        if (!mounted) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(() => undefined);
+        }
+        setCameraStatus("ready");
+      } catch {
+        if (!mounted) {
+          return;
+        }
+        setCameraStatus("error");
+        setCameraError("Permissão da câmera não concedida. Libere a câmera ou use fotos da galeria.");
+      }
+    }
+
+    startCamera();
+
+    return () => {
+      mounted = false;
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    };
+  }, []);
+
+  async function capturePhoto() {
+    const video = videoRef.current;
+    if (!video || cameraStatus !== "ready") {
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return;
+    }
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    await onCameraCapture(canvas.toDataURL("image/jpeg", 0.92));
+  }
+
   return (
     <section>
       <h2 className="text-lg font-semibold text-white">Evidências</h2>
-      <p className="mt-1 text-sm leading-6 text-slate-400">Use a câmera para registrar a placa ou adicione fotos da galeria.</p>
+      <p className="mt-1 text-sm leading-6 text-slate-400">A câmera será aberta para registrar a placa. Como alternativa, suba uma foto da galeria.</p>
 
       <div className="mt-5 overflow-hidden rounded-2xl border border-line bg-black/25">
-        {previewUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={previewUrl} alt="Preview da evidência" className="h-64 w-full object-cover" />
-        ) : (
-          <div className="flex h-64 flex-col items-center justify-center bg-[radial-gradient(circle_at_center,rgba(31,111,235,0.18),transparent_58%)] p-6 text-center">
-            <div className="relative flex h-32 w-full max-w-xs items-center justify-center rounded-2xl border border-dashed border-electric/35">
-              <span className="absolute left-4 top-4 h-8 w-8 rounded-tl-xl border-l-4 border-t-4 border-electric" />
-              <span className="absolute right-4 top-4 h-8 w-8 rounded-tr-xl border-r-4 border-t-4 border-electric" />
-              <span className="absolute bottom-4 left-4 h-8 w-8 rounded-bl-xl border-b-4 border-l-4 border-electric" />
-              <span className="absolute bottom-4 right-4 h-8 w-8 rounded-br-xl border-b-4 border-r-4 border-electric" />
-              <Camera className="h-10 w-10 text-electric" />
+        <div className="relative h-72 overflow-hidden bg-black">
+          <video ref={videoRef} autoPlay muted playsInline className={clsx("h-full w-full object-cover", cameraStatus === "ready" ? "opacity-100" : "opacity-20")} />
+
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
+            <div className="relative h-40 w-full max-w-sm rounded-2xl border border-dashed border-electric/35">
+              <span className="absolute left-4 top-4 h-9 w-9 rounded-tl-xl border-l-4 border-t-4 border-electric" />
+              <span className="absolute right-4 top-4 h-9 w-9 rounded-tr-xl border-r-4 border-t-4 border-electric" />
+              <span className="absolute bottom-4 left-4 h-9 w-9 rounded-bl-xl border-b-4 border-l-4 border-electric" />
+              <span className="absolute bottom-4 right-4 h-9 w-9 rounded-br-xl border-b-4 border-r-4 border-electric" />
             </div>
-            <p className="mt-5 text-sm font-semibold text-white">Posicione a placa dentro do quadro</p>
-            <p className="mt-1 text-xs text-slate-500">A leitura por IA será aplicada sobre a imagem anexada.</p>
           </div>
-        )}
+
+          {cameraStatus !== "ready" ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 p-6 text-center">
+              <Camera className="h-10 w-10 text-electric" />
+              <p className="mt-4 text-sm font-semibold text-white">{cameraStatus === "loading" ? "Solicitando permissão da câmera..." : "Câmera não disponível"}</p>
+              {cameraError ? <p className="mt-2 max-w-xs text-xs leading-5 text-slate-400">{cameraError}</p> : null}
+            </div>
+          ) : null}
+
+          <div className="absolute inset-x-0 bottom-4 flex justify-center px-4">
+            <button
+              type="button"
+              onClick={capturePhoto}
+              disabled={cameraStatus !== "ready"}
+              className="inline-flex h-12 min-w-44 items-center justify-center gap-2 rounded-full border border-electric/40 bg-brand px-5 text-sm font-bold text-white shadow-[0_18px_42px_rgba(31,111,235,0.38)] transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Camera className="h-5 w-5" />
+              Tirar foto
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <label className="flex min-h-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-electric/30 bg-brand/15 px-3 text-center text-blue-100 transition hover:bg-brand/20 active:scale-95">
-          <Camera className="h-5 w-5" />
-          <span className="text-xs font-semibold">Abrir câmera</span>
-          <input type="file" accept="image/*" capture="environment" onChange={onEvidence} className="hidden" />
-        </label>
+      <div className="mt-4 grid gap-2">
         <label className="flex min-h-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-line bg-white/[0.04] px-3 text-center text-slate-300 transition hover:bg-white/[0.06] active:scale-95">
           <ImagePlus className="h-5 w-5 text-electric" />
           <span className="text-xs font-semibold">Fotos da galeria</span>
@@ -836,4 +929,10 @@ function formatDateTime(value: string) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date(value));
+}
+
+async function dataUrlToFile(dataUrl: string, filename: string) {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  return new File([blob], filename, { type: blob.type || "image/jpeg" });
 }
