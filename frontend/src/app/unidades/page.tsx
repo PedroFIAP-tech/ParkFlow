@@ -11,7 +11,9 @@ const STORAGE_KEY = "parkflow_security_units_v1";
 
 const initialUnits: Unit[] = [
   { id: "unit-1", name: "Unidade Paulista", code: "UPA", type: "ESTACIONAMENTO", city: "Sao Paulo", address: "Av. Paulista, 1000", contactName: "Central Paulista", phone: "(11) 4000-1000" },
+
   { id: "unit-2", name: "Unidade Pinheiros", code: "UPI", type: "ESTACIONAMENTO", city: "Sao Paulo", address: "Rua dos Pinheiros, 600", contactName: "Supervisor Pinheiros", phone: "(11) 4000-2000" },
+  
   { id: "unit-3", name: "Unidade Shopping Norte", code: "USN", type: "SHOPPING", city: "Sao Paulo", address: "Setor G2", contactName: "Operacao Norte", phone: "(11) 4000-3000" }
 ];
 

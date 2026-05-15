@@ -13,6 +13,7 @@ export type NewOccurrenceInput = {
   location: string;
   priority: Priority;
   description: string;
+  reportedAt?: string;
   photoUrl?: string;
   photoUrls?: string[];
   aiResult?: ParkFlowAIResult | null;
@@ -134,7 +135,8 @@ export function saveOccurrences(occurrences: OccurrenceDetail[]) {
 }
 
 export function createOccurrence(input: NewOccurrenceInput, current: OccurrenceDetail[]): OccurrenceDetail {
-  const now = new Date();
+  const now = input.reportedAt ? new Date(input.reportedAt) : new Date();
+  const updatedAt = new Date();
   const sequence = String(149 + current.length).padStart(6, "0");
   const id = `demo-${crypto.randomUUID()}`;
   const plate = normalizePlate(input.plate);
@@ -158,7 +160,7 @@ export function createOccurrence(input: NewOccurrenceInput, current: OccurrenceD
     location: input.location,
     description: input.description,
     stoppedMinutes: 0,
-    updatedAt: now.toISOString(),
+    updatedAt: updatedAt.toISOString(),
     reportedAt: now.toISOString(),
     latestAIAnalysis: ai,
     latestAlert: alert,

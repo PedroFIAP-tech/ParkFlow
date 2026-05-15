@@ -165,7 +165,7 @@ export default function OccurrenceDetailPage() {
       title={`Ocorrencia ${occurrence.vehicle.plate}`}
       subtitle={`${occurrence.occurrenceCode} - detalhe operacional`}
       action={
-        <Link href="/">
+        <Link href="/" replace>
           <PremiumButton variant="secondary">
             <ArrowLeft className="h-4 w-4" />
             Central

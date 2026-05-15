@@ -203,7 +203,7 @@ export default function Home() {
         icon: Radar,
         tone: "bg-amber-500",
         active: false,
-        onClick: () => router.push("/suspeitas")
+        onClick: () => router.replace("/suspeitas")
       },
       {
         label: "Resolvidas Hoje",
@@ -243,7 +243,7 @@ export default function Home() {
         delta: "+12% vs ontem",
         icon: Car,
         tone: "blue" as const,
-        onClick: () => router.push("/ocorrencias")
+        onClick: () => router.replace("/ocorrencias")
       },
       {
         label: "Alertas Ativos",
@@ -253,7 +253,7 @@ export default function Home() {
         tone: "green" as const,
         onClick: () => {
           setStatus("ALERTA_GERADO");
-          router.push("/ocorrencias");
+          router.replace("/ocorrencias");
         }
       },
       {
@@ -262,7 +262,7 @@ export default function Home() {
         delta: "100% online",
         icon: Building2,
         tone: "purple" as const,
-        onClick: () => router.push("/unidades")
+        onClick: () => router.replace("/unidades")
       },
       {
         label: "Placas Suspeitas",
@@ -270,7 +270,7 @@ export default function Home() {
         delta: "+8% vs ontem",
         icon: Clock3,
         tone: "amber" as const,
-        onClick: () => router.push("/suspeitas")
+        onClick: () => router.replace("/suspeitas")
       }
     ];
   }, [occurrences, router, vehicleActivities]);
@@ -347,11 +347,11 @@ export default function Home() {
       setStatus("TODOS");
       setPriority("TODAS");
       setSearch("");
-      router.push("/");
+      router.replace("/");
       return;
     }
     if (action === "occurrences") {
-      router.push("/ocorrencias");
+      router.replace("/ocorrencias");
       return;
     }
     if (action === "registerVehicle") {
@@ -367,15 +367,15 @@ export default function Home() {
       return;
     }
     if (action === "units") {
-      router.push("/unidades");
+      router.replace("/unidades");
       return;
     }
     if (action === "suspects") {
-      router.push("/suspeitas");
+      router.replace("/suspeitas");
       return;
     }
     if (action === "reports") {
-      router.push("/relatorios");
+      router.replace("/relatorios");
       return;
     }
     if (action === "settings") {
@@ -420,7 +420,7 @@ export default function Home() {
       <MoreMenu
         open={moreOpen}
         onClose={() => setMoreOpen(false)}
-        onReports={() => router.push("/relatorios")}
+        onReports={() => router.replace("/relatorios")}
         onSettings={() => showToast({ type: "info", message: "Configuracoes simuladas abertas para a demo." })}
         onProfile={() => setProfileOpen(true)}
         onLogout={() => showToast({ type: "info", message: "Sessao demo encerrada." })}
@@ -516,7 +516,7 @@ export default function Home() {
                   <h2 className="text-lg font-bold text-white">Atividade Recente</h2>
                   <button
                     type="button"
-                    onClick={() => router.push("/veiculos")}
+                    onClick={() => router.replace("/veiculos")}
                     className="text-sm font-bold text-electric transition hover:text-blue-200"
                   >
                     Ver todas
@@ -552,7 +552,7 @@ export default function Home() {
                     router.push(`/ocorrencias/${activeAlertOccurrence.id}`);
                     return;
                   }
-                  router.push("/suspeitas");
+                  router.replace("/suspeitas");
                 }}
               />
 

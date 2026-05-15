@@ -23,7 +23,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
       setToast({ type: "success", message: "Acesso autorizado. Abrindo central operacional." });
-      window.setTimeout(() => router.push("/"), 520);
+      window.setTimeout(() => router.replace("/"), 520);
     } catch {
       setToast({ type: "error", message: "Nao foi possivel entrar. Verifique API, email e senha." });
     } finally {

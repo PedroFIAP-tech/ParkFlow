@@ -55,6 +55,7 @@ export function AppShell({
               <Link
                 key={item.label}
                 href={item.href}
+                replace
                 className={clsx(
                   "group flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition",
                   active ? "border border-electric/25 bg-brand/15 text-white" : "text-slate-500 hover:bg-white/5 hover:text-slate-100"
