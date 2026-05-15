@@ -139,3 +139,7 @@ IA:
 
 - configurar os dois webhooks n8n na Vercel;
 - manter a OpenAI API Key somente dentro do n8n.
+
+
+
+Passando essa parte, vamos focar no cadastro e login e usuarios, iremos cadastrar todos os supervisores fora de uma tela de cadastro, tipo no banco sabe, entao só ira ter login e tera que ser uma tela intuitiva de login

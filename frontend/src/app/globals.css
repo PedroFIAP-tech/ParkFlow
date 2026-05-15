@@ -43,6 +43,10 @@ select {
   background-size: 32px 32px;
 }
 
+body.parkflow-modal-open .mobile-nav {
+  display: none;
+}
+
 .glass-panel {
   border: 1px solid var(--line-soft);
   background: var(--surface-glass);

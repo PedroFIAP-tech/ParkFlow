@@ -23,7 +23,7 @@ export function MobileNav({
     );
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#070c17]/95 px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl md:hidden">
+    <nav className="mobile-nav fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#070c17]/95 px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-2xl md:hidden">
       <div className="mx-auto grid max-w-md grid-cols-5 items-center gap-1 text-slate-400">
         <Link href="/" replace className={linkClass("/")}>
           <Home className="h-5 w-5" />

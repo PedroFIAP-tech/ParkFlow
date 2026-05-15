@@ -110,6 +110,15 @@ export function NewOccurrenceModal({
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    document.body.classList.add("parkflow-modal-open");
+    return () => document.body.classList.remove("parkflow-modal-open");
+  }, [open]);
+
   const plateHistory = useMemo(() => getPlateHistory(occurrences, form.plate), [form.plate, occurrences]);
   const previousOccurrence = plateHistory[0];
   const previewUrl = photoUrls[0];
@@ -330,6 +339,7 @@ export function NewOccurrenceModal({
                   previousOccurrence={previousOccurrence}
                   onPlateMode={setPlateMode}
                   onUpdate={update}
+                  onNext={goToEvidence}
                 />
               ) : null}
 
@@ -440,13 +450,15 @@ function DataStep({
   plateMode,
   previousOccurrence,
   onPlateMode,
-  onUpdate
+  onUpdate,
+  onNext
 }: {
   form: ReturnType<typeof buildEmptyForm>;
   plateMode: PlateMode;
   previousOccurrence?: OccurrenceDetail;
   onPlateMode: (mode: PlateMode) => void;
   onUpdate: <K extends keyof ReturnType<typeof buildEmptyForm>>(key: K, value: ReturnType<typeof buildEmptyForm>[K]) => void;
+  onNext: () => void;
 }) {
   return (
     <section>
@@ -569,6 +581,10 @@ function DataStep({
       {previousOccurrence ? (
         <HistoryAlert occurrence={previousOccurrence} />
       ) : null}
+
+      <PremiumButton type="button" variant="primary" onClick={onNext} className="mt-5 w-full sm:hidden">
+        Próximo
+      </PremiumButton>
     </section>
   );
 }
