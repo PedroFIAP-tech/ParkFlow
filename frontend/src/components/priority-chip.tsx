@@ -8,11 +8,17 @@ const styles: Record<Priority, string> = {
   CRITICA: "border-danger/35 bg-danger/10 text-danger"
 };
 
+const labels: Record<Priority, string> = {
+  BAIXA: "BAIXA",
+  MEDIA: "MÉDIA",
+  ALTA: "ALTA",
+  CRITICA: "CRÍTICA"
+};
+
 export function PriorityChip({ priority }: { priority: Priority }) {
   return (
     <span className={clsx("inline-flex h-7 items-center rounded-md border px-2 text-xs font-semibold", styles[priority])}>
-      {priority}
+      {labels[priority]}
     </span>
   );
 }
-

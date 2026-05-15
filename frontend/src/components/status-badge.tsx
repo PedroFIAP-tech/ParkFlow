@@ -12,7 +12,7 @@ const styles: Record<OccurrenceStatus, string> = {
 
 const labels: Record<OccurrenceStatus, string> = {
   ABERTA: "ABERTA",
-  EM_ANALISE: "EM ANALISE",
+  EM_ANALISE: "EM ANÁLISE",
   ALERTA_GERADO: "ALERTA GERADO",
   MONITORAMENTO: "MONITORAMENTO",
   RESOLVIDA: "RESOLVIDA",
