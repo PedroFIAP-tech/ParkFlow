@@ -39,7 +39,7 @@ export function AppShell({
   }
 
   return (
-    <main className="operation-grid min-h-screen overflow-hidden bg-ink pb-28 md:pb-0">
+    <main className="operation-grid min-h-screen overflow-x-hidden bg-ink pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-0">
       <Toast toast={toast} />
       <div className="noise-overlay" />
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-line bg-ink/86 px-4 py-5 backdrop-blur-2xl xl:block">
@@ -81,11 +81,11 @@ export function AppShell({
       <div className="relative z-10 xl:pl-72">
         <header className="sticky top-0 z-20 border-b border-line bg-ink/72 px-4 py-4 backdrop-blur-2xl sm:px-6 lg:px-8">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{subtitle}</p>
-              <h2 className="mt-1 text-2xl font-semibold text-white">{title}</h2>
+              <h2 className="mt-1 break-words text-xl font-semibold text-white min-[380px]:text-2xl">{title}</h2>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <div className="hidden h-11 min-w-72 items-center gap-3 rounded-lg border border-line bg-black/25 px-3 text-slate-500 md:flex">
                 <Search className="h-4 w-4" />
                 <span className="text-sm">Comando rapido, placa ou unidade</span>
@@ -113,7 +113,7 @@ export function AppShell({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8"
+          className="mx-auto max-w-7xl px-3 py-6 min-[380px]:px-4 sm:px-6 lg:px-8"
         >
           {children}
         </motion.div>

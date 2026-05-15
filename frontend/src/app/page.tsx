@@ -426,36 +426,36 @@ export default function Home() {
         onLogout={() => showToast({ type: "info", message: "Sessao demo encerrada." })}
       />
 
-      <div className="mx-auto flex w-full max-w-7xl gap-6 px-4 pb-28 pt-5 sm:px-6 lg:pb-8 lg:pt-8">
+      <div className="mx-auto flex w-full max-w-7xl gap-6 px-3 pb-36 pt-4 min-[380px]:px-4 sm:px-6 lg:pb-8 lg:pt-8">
         <DesktopSidebar onAction={runDrawerAction} />
 
-        <section className="min-w-0 flex-1">
-          <div className="mx-auto max-w-[430px] rounded-[1.75rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.18),transparent_36%),linear-gradient(180deg,#050914_0%,#070b15_100%)] shadow-2xl lg:max-w-[520px] lg:rounded-3xl">
-            <header className="flex items-center justify-between gap-4 px-5 pt-6 lg:px-7">
-              <div className="flex min-w-0 items-center gap-3">
+        <section className="min-w-0 flex-1 overflow-hidden">
+          <div className="mx-auto w-full max-w-[430px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.18),transparent_36%),linear-gradient(180deg,#050914_0%,#070b15_100%)] shadow-2xl lg:max-w-[520px] lg:rounded-3xl">
+            <header className="flex items-center justify-between gap-2 px-4 pt-5 min-[380px]:gap-3 sm:px-5 sm:pt-6 lg:px-7">
+              <div className="flex min-w-0 items-center gap-2 min-[380px]:gap-3">
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(true)}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-200 transition hover:bg-white/[0.06] active:scale-95 lg:hidden"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-200 transition hover:bg-white/[0.06] active:scale-95 min-[380px]:h-10 min-[380px]:w-10 lg:hidden"
                 >
-                  <Menu className="h-7 w-7" />
+                  <Menu className="h-6 w-6 min-[380px]:h-7 min-[380px]:w-7" />
                 </button>
                 <button
                   type="button"
                   onClick={() => runDrawerAction("home")}
                   className="flex min-w-0 items-center rounded-xl text-left transition hover:opacity-90"
                 >
-                  <BrandLogo priority className="h-12 w-52 sm:w-64" />
+                  <BrandLogo priority className="h-10 w-28 min-[360px]:w-36 min-[400px]:w-44 sm:h-12 sm:w-56 lg:w-64" />
                 </button>
               </div>
 
-              <div className="relative flex items-center gap-2 sm:gap-3">
+              <div className="relative flex shrink-0 items-center gap-1.5 min-[380px]:gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setNotificationsOpen(true)}
-                  className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-200 transition hover:bg-white/[0.06] active:scale-95"
+                  className="relative flex h-9 w-9 items-center justify-center rounded-xl text-slate-200 transition hover:bg-white/[0.06] active:scale-95 min-[380px]:h-10 min-[380px]:w-10"
                 >
-                  <Bell className="h-6 w-6" />
+                  <Bell className="h-5 w-5 min-[380px]:h-6 min-[380px]:w-6" />
                   {unreadCount ? (
                     <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold">
                       {unreadCount}
@@ -465,7 +465,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setProfileOpen((current) => !current)}
-                  className="relative h-11 w-11 overflow-hidden rounded-full border border-white/10 bg-slate-800 transition hover:border-electric/45 active:scale-95"
+                  className="relative h-10 w-10 overflow-hidden rounded-full border border-white/10 bg-slate-800 transition hover:border-electric/45 active:scale-95 min-[380px]:h-11 min-[380px]:w-11"
                 >
                   <Image src="https://res.cloudinary.com/demo/image/upload/c_fill,w_96,h_96,q_auto/woman.jpg" alt="Usuario" width={96} height={96} />
                   <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[#050914] bg-green-400" />
@@ -478,9 +478,9 @@ export default function Home() {
               </div>
             </header>
 
-            <div className="px-4 pb-6 pt-6 sm:px-5 lg:px-6">
+            <div className="px-3.5 pb-6 pt-6 min-[380px]:px-4 sm:px-5 lg:px-6">
               <section className="space-y-2">
-                <h1 className="text-[1.65rem] font-bold leading-tight tracking-normal text-white sm:text-3xl">
+                <h1 className="text-[1.45rem] font-bold leading-tight tracking-normal text-white min-[360px]:text-[1.65rem] sm:text-3xl">
                   Boa noite, Joao! <span aria-hidden="true">👋</span>
                 </h1>
                 <button
@@ -493,7 +493,7 @@ export default function Home() {
                 </button>
               </section>
 
-              <section className="mt-6 grid grid-cols-2 gap-3">
+              <section className="mt-6 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
                 <HomeActionCard
                   variant="vehicle"
                   title="Registrar"
@@ -568,7 +568,7 @@ export default function Home() {
                     <ChevronDown className="h-4 w-4" />
                   </button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
                   {operationalSummary.map((item) => (
                     <OperationalSummaryCard key={item.label} {...item} />
                   ))}
@@ -856,32 +856,32 @@ function HomeActionCard({
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={clsx(
-        "group relative min-h-[104px] overflow-hidden rounded-2xl border p-3 text-left shadow-[0_18px_46px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5",
+        "group relative min-h-[104px] overflow-hidden rounded-2xl border p-2.5 text-left shadow-[0_18px_46px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5 lg:p-3 lg:pr-9",
         isVehicle
           ? "border-electric/35 bg-[radial-gradient(circle_at_20%_10%,rgba(31,111,235,0.26),transparent_42%),linear-gradient(135deg,#07172e_0%,#06101e_100%)]"
           : "border-danger/30 bg-[radial-gradient(circle_at_20%_10%,rgba(239,68,68,0.2),transparent_42%),linear-gradient(135deg,#211012_0%,#080a10_100%)]"
       )}
     >
-      <div className="flex h-full items-center gap-2">
-        <div className="grid h-16 w-[72px] shrink-0 place-items-center drop-shadow-[0_16px_20px_rgba(0,0,0,0.45)]">
+      <div className="flex h-full min-w-0 items-center gap-2">
+        <div className="grid h-10 w-10 shrink-0 place-items-center drop-shadow-[0_16px_20px_rgba(0,0,0,0.45)] lg:h-14 lg:w-16">
           <Image
             src={media}
             alt={`${title} ${emphasis}`}
             width={96}
             height={96}
-            className="h-16 w-[72px] object-contain"
+            className="h-10 w-10 object-contain lg:h-14 lg:w-16"
             priority
           />
         </div>
 
         <div className="min-w-0 flex-1">
-          <span className="block text-base font-bold leading-5 text-white">{title}</span>
-          <span className={clsx("mt-0.5 block text-base font-bold leading-5", isVehicle ? "text-electric" : "text-danger")}>
+          <span className="block break-words text-[0.92rem] font-bold leading-5 text-white lg:text-base">{title}</span>
+          <span className={clsx("mt-0.5 block break-words text-[0.92rem] font-bold leading-5 lg:text-base", isVehicle ? "text-electric" : "text-danger")}>
             {emphasis}
           </span>
         </div>
 
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-white/80 transition group-hover:bg-white/[0.14] group-hover:text-white">
+        <span className="absolute right-2 top-1/2 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/[0.08] text-white/80 transition group-hover:bg-white/[0.14] group-hover:text-white lg:flex">
           <ChevronRight className="h-5 w-5" />
         </span>
       </div>
@@ -911,26 +911,26 @@ function ActiveSuspicionCard({
       <div className="relative z-10 flex min-h-[120px]">
         <div className="min-w-0 flex-1 pr-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em] text-danger">
+            <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase leading-4 tracking-[0.12em] text-danger min-[380px]:text-[11px]">
               <AlertTriangle className="h-4 w-4" />
               ALERTA DE SUSPEITA ATIVA
             </span>
-            <span className="text-[10px] font-black uppercase tracking-[0.12em] text-danger">
+            <span className="text-[10px] font-black uppercase leading-4 tracking-[0.1em] text-danger">
               COMPARTILHADO ENTRE UNIDADES
             </span>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <strong className="font-mono text-3xl font-black tracking-normal text-white">{plate}</strong>
+            <strong className="font-mono text-2xl font-black tracking-normal text-white min-[360px]:text-3xl">{plate}</strong>
             <span className="rounded-lg border border-danger/25 bg-danger/15 px-3 py-1 text-xs font-black text-danger">ALTO RISCO</span>
           </div>
 
           <p className="mt-3 max-w-[230px] truncate text-sm font-semibold text-white">{description}</p>
-          <p className="mt-2 text-sm text-slate-400">Última ocorrência: {lastOccurrence}</p>
+          <p className="mt-2 text-sm leading-5 text-slate-400">Última ocorrência: {lastOccurrence}</p>
           <p className="mt-1 text-sm text-slate-400">{unit}</p>
         </div>
 
-        <div className="relative hidden w-28 shrink-0 items-end justify-center min-[390px]:flex">
+        <div className="relative hidden w-28 shrink-0 items-end justify-center min-[460px]:flex">
           <Image
             src="https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=240&q=80"
             alt="Veículo em alerta"
@@ -980,16 +980,16 @@ function OperationalSummaryCard({
     <button
       type="button"
       onClick={onClick}
-      className="min-h-[118px] rounded-2xl border border-white/10 bg-[#0b1018]/90 p-3 text-left shadow-[0_16px_44px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 hover:border-white/20 active:scale-[0.98]"
+      className="min-h-[118px] overflow-hidden rounded-2xl border border-white/10 bg-[#0b1018]/90 p-3 text-left shadow-[0_16px_44px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 hover:border-white/20 active:scale-[0.98]"
     >
       <div className="flex items-center gap-3">
         <span className={clsx("flex h-10 w-10 items-center justify-center rounded-xl border", tones[tone])}>
           <Icon className="h-5 w-5" />
         </span>
-        <strong className="text-2xl font-black text-white">{value}</strong>
+        <strong className="text-2xl font-black text-white min-[380px]:text-3xl">{value}</strong>
       </div>
-      <p className="mt-3 text-sm font-semibold text-slate-300">{label}</p>
-      <span className={clsx("mt-1 block text-xs font-bold", deltaTones[tone])}>{delta}</span>
+      <p className="mt-3 break-words text-[13px] font-semibold leading-4 text-slate-300 min-[380px]:text-sm">{label}</p>
+      <span className={clsx("mt-1 block break-words text-xs font-bold leading-4", deltaTones[tone])}>{delta}</span>
     </button>
   );
 }
@@ -1100,7 +1100,7 @@ function VehicleActivityRow({
         activity.alert ? "border-danger/35" : "border-white/10"
       )}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 min-[440px]:flex-row min-[440px]:items-center">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05]">
             <Car className="h-7 w-7 text-electric" />
@@ -1110,7 +1110,7 @@ function VehicleActivityRow({
               <span className="rounded-md bg-electric px-1.5 py-1 text-[11px] font-black text-white">{activity.source}</span>
               <span className="font-mono text-base font-black text-white sm:text-lg">{activity.plate}</span>
             </div>
-            <p className="mt-1 text-sm text-slate-400">
+            <p className="mt-1 text-sm leading-5 text-slate-400">
               Leitura realizada há {formatRelativeMinutes(activity.createdAt)} min
             </p>
             <p className="mt-1 truncate text-sm text-slate-500">
@@ -1119,24 +1119,24 @@ function VehicleActivityRow({
           </div>
         </div>
 
-        <div className="flex shrink-0 gap-2">
+        <div className="grid w-full shrink-0 grid-cols-2 gap-2 min-[440px]:flex min-[440px]:w-auto">
           <button
             type="button"
             onClick={onValidate}
             disabled={isValidated || isSignaled}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-success/25 bg-success/10 px-2.5 text-xs font-bold text-success transition hover:bg-success/15 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-success/25 bg-success/10 px-2 text-xs font-bold text-success transition hover:bg-success/15 disabled:cursor-not-allowed disabled:opacity-50 min-[440px]:px-2.5"
           >
             <CheckCircle2 className="h-4 w-4" />
-            {isValidated ? "Validado" : "Validar"}
+            <span className="truncate">{isValidated ? "Validado" : "Validar"}</span>
           </button>
           <button
             type="button"
             onClick={onSignal}
             disabled={isSignaled}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-danger/25 bg-danger/10 px-2.5 text-xs font-bold text-danger transition hover:bg-danger/15 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-danger/25 bg-danger/10 px-2 text-xs font-bold text-danger transition hover:bg-danger/15 disabled:cursor-not-allowed disabled:opacity-50 min-[440px]:px-2.5"
           >
             <Flag className="h-4 w-4" />
-            {isSignaled ? "Sinalizado" : "Sinalizar"}
+            <span className="truncate">{isSignaled ? "Sinalizado" : "Sinalizar"}</span>
           </button>
         </div>
       </div>

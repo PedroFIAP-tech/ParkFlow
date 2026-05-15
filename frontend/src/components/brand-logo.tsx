@@ -1,14 +1,16 @@
 import Image from "next/image";
 
 export function BrandLogo({
-  className = "",
+  className,
   priority = false
 }: {
   className?: string;
   priority?: boolean;
 }) {
+  const sizeClassName = className?.trim() ? className : "h-12 w-56";
+
   return (
-    <div className={`relative h-12 w-56 ${className}`}>
+    <div className={`relative ${sizeClassName}`}>
       <Image
         src="/smartpark-security-logo.png"
         alt="SmartPark Security"
